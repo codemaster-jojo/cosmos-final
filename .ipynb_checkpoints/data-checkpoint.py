@@ -6,7 +6,6 @@ import adi
 from cosmos import *
 from digicomm import *
 
-#NEVER RUN AGAIN!!!!!
 def bit_generator(n):
     list_of_bits = []
     for i in range(n):
@@ -18,6 +17,7 @@ def bit_generator(n):
         list_of_bits.append(string)
     with open("list_of_bits.txt", "w", encoding="utf-8") as file:
         file.writelines(list_of_bits)
+    return list_of_bits
 
 def add_awgn(symbols, noise_level): # for testing purposes, if necessary
     received = symbols + np.random.randn(len(symbols)) * noise_level
@@ -38,12 +38,12 @@ def send_real_data(constellation):
 
     
     with open("list_of_bits.txt", "r") as f:
-        target = [int(line.strip(), 2) for line in f]
+        target = [line.strip() for line in f]
 
-    target_truncated = [target[0], target[1], target[2]] # CHANGE LATER
+    target_truncated = [target[0]] # CHANGE LATER
     
     for t in target_truncated:
-        tx.transmit(tx_symbols)
+        tx.transmit(bits_to_pam_symbols(t, constellation))
         print("Transmitting data...")
         time.sleep(1)
     
@@ -73,3 +73,10 @@ def receive_real_data(constellation, target):
         
 
     return rx_symbols, decoded, target
+
+target = []
+with open("list_of_bits.txt", "r") as f:
+    target = [int(line.strip(), 2) for line in f]
+    
+send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
+# receive_real_data([-7, -5, -3, -1, 1, 3, 5, 7], [target[0]])

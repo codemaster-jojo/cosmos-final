@@ -39,8 +39,4 @@ if True:
     plt.ylabel('Imaginary Component')
     plt.grid(True)
     plt.legend()
-    filename = dir_plots + 'main_tx_rx_02' + '.pdf'
-    plt.savefig(filename)
-    filename = dir_plots + 'main_tx_rx_02' + '.svg'
-    plt.savefig(filename)
     plt.show()
