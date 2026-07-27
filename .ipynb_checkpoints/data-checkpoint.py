@@ -32,7 +32,7 @@ def send_real_data(constellation):
     tx = PlutoTransmitter()
     tx.set_sdr(sdr_tx)
     tx.set_channel(9)
-    tx.set_power_level(75)
+    tx.set_power_level(95)
 
     # l = int(np.log2(len(constellation)))
 
@@ -56,7 +56,7 @@ def send_real_data(constellation):
     
 
 def receive_real_data(constellation, target):
-    sdr_rx = adi.Pluto("usb:1.1.5")
+    sdr_rx = adi.Pluto("usb:0.1.5")
 
     rx = PlutoReceiver()
     rx.set_sdr(sdr_rx)
@@ -86,5 +86,5 @@ target = []
 with open("list_of_bits.txt", "r") as f:
     target = [int(line.strip(), 2) for line in f]
     
-send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
-#receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])
+# send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
+# receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])
