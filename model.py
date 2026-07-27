@@ -78,15 +78,3 @@ class Decoder(nn.Module):
             boundaries = self.get_boundaries()
             predicted_symbols = torch.searchsorted(boundaries, received_values)
         return predicted_symbols
-
-
-# Quick sanity test
-decoder = Decoder()
-fake_received = torch.tensor([-1.4, -0.7, 0.1, 0.9, 1.6])
-
-soft_out = decoder(fake_received)
-hard_out = decoder.decode_hard(fake_received)
-
-print("Boundaries:", decoder.get_boundaries())
-print("Soft output (for training):", soft_out)
-print("Hard predicted symbols (for eval):", hard_out)
