@@ -53,12 +53,12 @@ def receive_real_data(constellation, target):
 
     rx = PlutoReceiver()
     rx.set_sdr(sdr_rx)
-    rx.set_buffer_size(500e3)
+    rx.set_buffer_size(500000)
     rx.set_channel(9)
     rx.set_gain_level(80)
     rx.desired_transmit_symbols_real = True
-    rx.num_transmit_symbols = 4096/int(np.log2(len(constellation)))
-
+    rx.num_transmit_symbols = 4096 // int(np.log2(len(constellation)))
+    
     decoded_arr = []
     
     for i in target:
@@ -69,8 +69,7 @@ def receive_real_data(constellation, target):
         decoded_arr.append(decoded)
 
     
-    print("Errors: " + sum(np.array(target) == np.array(decoded_arr)))
-        
+    print("Errors:", sum(np.array(target) != np.array(decoded_arr)))        
 
     return rx_symbols, decoded, target
 
@@ -78,5 +77,5 @@ target = []
 with open("list_of_bits.txt", "r") as f:
     target = [int(line.strip(), 2) for line in f]
     
-send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
-# receive_real_data([-7, -5, -3, -1, 1, 3, 5, 7], [target[0]])
+#send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
+receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])

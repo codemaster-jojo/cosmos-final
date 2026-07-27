@@ -47,46 +47,36 @@ def get_pam_constellation(M, Es=1):
     return const_values
 
 def bits_to_pam_symbols(bits, constellation):
-    """
-    Convert a bit sequence to a sequence of M-PAM symbols.
-    """
-    # Add your conversion code here.
     length = int(np.log2(len(constellation)))
-    symbols = np.zeros(int(len(bits) // length))
-    
-    for i in range(len(symbols)):
-        symbol = bits[i*length:i*length+length]
-        result = int("".join(map(str, symbol)), 2)
-        symbols[i] = constellation[result]
+    num_symbols = len(bits) // length
+
+    symbols = np.zeros(num_symbols)
+
+    for i in range(num_symbols):
+        chunk = bits[i*length:(i+1)*length]
+        index = int(chunk, 2)
+        symbols[i] = constellation[index]
 
     return symbols
 
 
-def pam_symbols_to_bits(symbols, M):
-    """
-    Convert a sequence of M-PAM symbols back to a bit sequence.
-    """
-    # Add your conversion code here.
+def pam_symbols_to_bits(symbols, constellation):
     bits = []
 
-    constellation = get_pam_constellation(M)
+    length = int(np.log2(len(constellation)))
 
-    reverse_const = dict(zip(constellation, np.arange(0, M+1)))
-    
     for symbol in symbols:
-        binary = reverse_const[symbol]
+        index = np.argmin(np.abs(np.array(constellation) - symbol))
 
-        binary_array_bits = [(binary >> i) & 1 for i in reversed(range(int(np.log2(M))))]
+        binary_bits = [
+            int(x) for x in format(index, f'0{length}b')
+        ]
 
-        bits += binary_array_bits
+        bits.extend(binary_bits)
 
-    bits = np.array(bits)
-        
+    return np.array(bits)
 
     
-    
-    return bits
-
 #files_and_bytes
 def file_to_bytes(file_path):
     """
