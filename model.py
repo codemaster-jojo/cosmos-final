@@ -38,24 +38,55 @@ class Constellation(nn.Module):
             self.points.copy_(
                 torch.tensor(
                     new_points,
-                    dtype=torch.float32
+                    dtype=torch.float32)
+            )
 
 
 class Decoder(nn.Module):
 
-    def __init__(self, M=8, hidden_dim = 32):
+    def __init__(self, M=8, temperature=10.0):
         super().__init__()
         self.M = M
+        self.temperature = temperature  # controls how "soft" vs "sharp" boundaries are during training
+        
+        # Init at standard midpoints as a reasonable starting guess
+        init_boundaries = torch.tensor([
+            -1.3093, -0.8729, -0.4364, 0.0, 0.4364, 0.8729, 1.3093
+        ], dtype=torch.float32)
 
-        self.net = nn.Sequential(
-            nn.Linear(1, hidden_dim), 
-            nn.ReLU(), 
-            nn.Linear(hidden_dim, hidden_dim), 
-            nn.ReLU(), 
-            nn.Linear(hidden_dim, M)
-        )
+        self.raw_boundaries = nn.Parameter(init_boundaries)
+
+    def get_boundaries(self):
+        # Sort to guarantee increasing order, regardless of how gradients move them individually
+        return torch.sort(self.raw_boundaries).values
 
     def forward(self, received_values):
-        x = received_values.unsqueeze(-1)
-        logits = self.net(x)
-        return logits
+        boundaries = self.get_boundaries()  # shape (M-1,)
+        soft_indicators = torch.sigmoid(
+            (received_values.unsqueeze(-1) - boundaries.unsqueeze(0)) * self.temperature
+        )  
+
+        # Summing these gives a smooth, differentiable approximation of "how many boundaries has this value passed"
+        # but now as a continuous value instead of a hard integer
+        soft_symbol_position = soft_indicators.sum(dim=-1)  
+
+        return soft_symbol_position  # continuous prediction, differentiable
+
+    def decode_hard(self, received_values):
+        # Use this at eval time / real decoding, no gradients needed here
+        with torch.no_grad():
+            boundaries = self.get_boundaries()
+            predicted_symbols = torch.searchsorted(boundaries, received_values)
+        return predicted_symbols
+
+
+# Quick sanity test
+decoder = Decoder()
+fake_received = torch.tensor([-1.4, -0.7, 0.1, 0.9, 1.6])
+
+soft_out = decoder(fake_received)
+hard_out = decoder.decode_hard(fake_received)
+
+print("Boundaries:", decoder.get_boundaries())
+print("Soft output (for training):", soft_out)
+print("Hard predicted symbols (for eval):", hard_out)
