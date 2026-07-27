@@ -32,7 +32,7 @@ def send_real_data(constellation):
     tx = PlutoTransmitter()
     tx.set_sdr(sdr_tx)
     tx.set_channel(9)
-    tx.set_power_level(95)
+    tx.set_power_level(75)
 
     # l = int(np.log2(len(constellation)))
 

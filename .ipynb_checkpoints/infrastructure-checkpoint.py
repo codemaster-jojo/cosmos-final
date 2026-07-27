@@ -106,14 +106,13 @@ def get_decision_boundaries(constellation):
     
     return boundaries
 
-def pam_detect(symbols, M):
+def pam_detect(symbols, c):
     """
     Detect noisy M-PAM symbols.
     """
 
     # Find the M-PAM constellation (i.e., all of the possible symbols).
-    constellation = get_pam_constellation(M)
-    constellation.sort()
+    constellation = sorted(c)
     boundaries = get_decision_boundaries(constellation)
     
     # Choose the nearest constellation symbol for each noisy symbol.
@@ -121,7 +120,7 @@ def pam_detect(symbols, M):
     for i,symbol in enumerate(symbols):
         less_than = symbol < boundaries
         indices = np.flatnonzero(less_than)
-        first_true = indices[0] if indices.size else M-1
+        first_true = indices[0] if indices.size else len(c)-1
         detected_symbols[i] = constellation[first_true]
     return detected_symbols
 
