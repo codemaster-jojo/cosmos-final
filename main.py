@@ -20,7 +20,7 @@ with open("list_of_bits.txt", "r") as file:
         bits = [int(bit) for bit in line.strip()]
         symbols = bits_to_symbol_indices(bits, 8)
         all_symbols.extend(symbols)
-all_symbols = np.array(all_symbols, dtype=np.uint8)[:100]
+all_symbols = np.array(all_symbols, dtype=np.uint8)[:640]
 
 dataset = MainDataset(all_symbols, all_symbols)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)

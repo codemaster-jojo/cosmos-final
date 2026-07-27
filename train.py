@@ -60,7 +60,7 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        if batch % 50 == 0:
+        if batch % 2 == 0:
             print(loss.item())
             print(constellation.normalized_points())
             print(decoder.get_boundaries())

@@ -8,7 +8,8 @@ class Constellation(nn.Module):
         super().__init__()
         self.M = M
         self.Es = Es
-    
+
+        '''
         self.points = nn.Parameter(
             torch.tensor([
                 -1.5275252316519465,
@@ -21,6 +22,8 @@ class Constellation(nn.Module):
                  1.5275252316519465
             ], dtype=torch.float32)
         )
+        '''
+        self.points = nn.Parameter(torch.tensor([-1, -1, -1, -1, 1, 1, 1, 1], dtype=torch.float32))
 
     def normalized_points(self):
         energy = (self.points ** 2).mean()
