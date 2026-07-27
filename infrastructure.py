@@ -140,3 +140,17 @@ def bits_to_bytes(bits):
     """
     # Add your conversion code here.
     return np.packbits(bits.astype(np.uint8)).tobytes()
+
+def bits_to_symbol_indices(bits, M):
+    length = int(np.log2(M))
+    num_symbols = len(bits) // length
+    symbols = np.zeros(num_symbols, dtype=np.int64)
+
+    for i in range(num_symbols):
+        segment = bits[i*length:(i+1)*length]
+        # Convert array of bits into a string
+        string = ""
+        for bit in segment:
+            string += str(b)
+        symbols[i] = int(string, 2)
+    return symbols
