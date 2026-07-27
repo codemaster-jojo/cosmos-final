@@ -13,6 +13,7 @@ def bit_generator(n):
         list_of_bits.append(string)
     with open("list_of_bits.txt", "w", encoding="utf-8") as file:
         file.writelines(list_of_bits)
+    return list_of_bits
 
 def add_awgn(symbols, noise_level): # for testing purposes, if necessary
     received = symbols + np.random.randn(len(symbols)) * noise_level
@@ -35,7 +36,9 @@ def send_real_data(constellation):
     with open(filename, "r") as f:
         target = [int(line.strip(), 2) for line in f]
 
-    for t in target:
+    target_truncated = [target[0], target[1], target[2]] # CHANGE LATER
+    
+    for t in target_truncated:
         tx.transmit(tx_symbols)
         print("Transmitting data...")
         time.sleep(1)
@@ -52,12 +55,17 @@ def receive_real_data(constellation, target):
     rx.desired_transmit_symbols_real = True
     rx.num_transmit_symbols = 4096/int(np.log2(len(constellation)))
 
+    decoded_arr = []
+    
     for i in target:
         rx_symbols = rx.receive()
     
         # REMOVE LATER W/ DECODER MODEL
         decoded = pam_symbols_to_bits(rx_symbols, constellation)
+        decoded_arr.append(decoded)
 
-        print(sum(np.array(target) == decoded))
+    
+    print("Errors: " + sum(np.array(target) == np.array(decoded_arr)))
+        
 
-    # return rx_symbols, decoded, target
+    return rx_symbols, decoded, target
