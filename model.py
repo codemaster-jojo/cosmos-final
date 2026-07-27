@@ -32,22 +32,30 @@ class Constellation(nn.Module):
         pts = self.normalized_points()
         return pts[symbol_indices]
 
+    def set_points(self, new_points):
+        #Allows external optimizer/LLM to modify constellation.
+        with torch.no_grad():
+            self.points.copy_(
+                torch.tensor(
+                    new_points,
+                    dtype=torch.float32
 
-#class Decoder(nn.Module):
 
-    #def __init__(self, M=8, hidden_dim = 32):
-        #super().__init__()
-        #self.M = M
+class Decoder(nn.Module):
 
-        #self.net = nn.Sequential(
-            #nn.Linear(1, hidden_dim), 
-            #nn.ReLU(), 
-            #nn.Linear(hidden_dim, hidden_dim), 
-            #nn.ReLU(), 
-            #nn.Linear(hidden_dim, M)
-        #)
+    def __init__(self, M=8, hidden_dim = 32):
+        super().__init__()
+        self.M = M
 
-    #def forward(self, received_values):
-        #x = received_values.unsqueeze(-1)
-        #logits = self.net(x)
-        #return logits
+        self.net = nn.Sequential(
+            nn.Linear(1, hidden_dim), 
+            nn.ReLU(), 
+            nn.Linear(hidden_dim, hidden_dim), 
+            nn.ReLU(), 
+            nn.Linear(hidden_dim, M)
+        )
+
+    def forward(self, received_values):
+        x = received_values.unsqueeze(-1)
+        logits = self.net(x)
+        return logits
