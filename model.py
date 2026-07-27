@@ -1,9 +1,5 @@
 import torch
-<<<<<<< Updated upstream
 import torch.nn as nn
-=======
-from torch import nn
->>>>>>> Stashed changes
 from torch.utils.data import DataLoader
 
 class Constellation(nn.Module):
@@ -37,7 +33,6 @@ class Constellation(nn.Module):
         return pts[symbol_indices]
 
 
-<<<<<<< Updated upstream
 #class Decoder(nn.Module):
 
     #def __init__(self, M=8, hidden_dim = 32):
@@ -56,9 +51,3 @@ class Constellation(nn.Module):
         #x = received_values.unsqueeze(-1)
         #logits = self.net(x)
         #return logits
-=======
-class Decoder(nn.Module):
-
-    def __init__(self, M=8, hidden_dim = 32):
-        super()
->>>>>>> Stashed changes
