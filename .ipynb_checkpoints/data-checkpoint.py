@@ -41,10 +41,17 @@ def send_real_data(constellation):
         target = [line.strip() for line in f]
 
     target_truncated = [target[0]] # CHANGE LATER
-    
+
+    '''
     for t in target_truncated:
         tx.transmit(bits_to_pam_symbols(t, constellation))
         print("Transmitting data...")
+        time.sleep(1)
+    '''
+    tx.transmit(bits_to_pam_symbols(target[0], constellation))
+
+    while True:
+        print("transmittingasdfdfs", bits_to_pam_symbols(target[0], constellation))
         time.sleep(1)
     
 
@@ -77,5 +84,5 @@ target = []
 with open("list_of_bits.txt", "r") as f:
     target = [int(line.strip(), 2) for line in f]
     
-#send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
-receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])
+send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
+#receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])
