@@ -9,7 +9,7 @@ class Constellation(nn.Module):
         self.M = M
         self.Es = Es
 
-        '''
+        
         self.points = nn.Parameter(
             torch.tensor([
                 -1.5275252316519465,
@@ -22,8 +22,8 @@ class Constellation(nn.Module):
                  1.5275252316519465
             ], dtype=torch.float32)
         )
-        '''
-        self.points = nn.Parameter(torch.tensor([-1, -1, -1, -1, 1, 1, 1, 1], dtype=torch.float32))
+        
+        #self.points = nn.Parameter(torch.tensor([-1, -1, -1, -1, 1, 1, 1, 1], dtype=torch.float32))
 
     def normalized_points(self):
         energy = (self.points ** 2).mean()
@@ -53,9 +53,12 @@ class Decoder(nn.Module):
         self.temperature = temperature  # controls how "soft" vs "sharp" boundaries are during training
         
         # Init at standard midpoints as a reasonable starting guess
+        '''
         init_boundaries = torch.tensor([
             -1.3093, -0.8729, -0.4364, 0.0, 0.4364, 0.8729, 1.3093
         ], dtype=torch.float32)
+        '''
+        init_boundaries = torch.tensor([-1.3, -0.75, -0.5, 0, 0.5, 0.6, 1.2], dtype=torch.float32)
 
         self.raw_boundaries = nn.Parameter(init_boundaries)
 

@@ -51,6 +51,15 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         # # AWGN channel
         # noise = torch.zeros_like(transmitted) # 
         noise = 0.1 * torch.randn_like(transmitted)
+        '''
+        noise = torch.from_numpy(
+            np.random.gamma(shape=2, scale=1, size=transmitted.shape)
+        ).float().to(transmitted.device)
+        
+        noise -= torch.mean(noise)
+        noise *= 0.1
+        '''
+        
         received = transmitted + noise
 
         # Neural decoder
