@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
-from torchvision.transforms import v2
+from torchvision.transforms import v2 #For images
 import numpy as np
 
 class MainDataset(Dataset):
@@ -16,7 +16,6 @@ class MainDataset(Dataset):
     def __getitem__(self, index):
         return self.features[index], self.labels[index]
 
-
 with open("your_file.txt", "r", encoding="utf-8") as file:
     features = []
     for line in file:
@@ -26,21 +25,28 @@ with open("your_file.txt", "r", encoding="utf-8") as file:
         features.append(line_list)
     features = np.array(features, dtype = np.uint8)
     labels = np.zeros(len(features), dtype = np.uint64)
-dataset = MainDataset(features, labels) #uint64 is needed for the loss function input
+train_dataset = MainDataset(features, labels) #uint64 is needed for the loss function input
+train_dataloader = Dataloader(train_dataset, batch_size = 64)
+loss_function = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr = 0.001) #lr is essentially how big of an adjustment we want at the beginning
 
 
-features = features.to(device)
-labels = labels.to(device)
-# Compute prediction error
-prediction = model(features)
-loss = loss_function(prediction, labels) #FIND LOSS FUNCTION!!!
-# Backpropagation
-# loss.backward()
-# optimizer.step()
-# optimizer.zero_grad()
 
-#Every 100 batches, calculates the loss
-if batch % 100 == 0:
-    loss = loss.item()
-    current = (batch + 1) * len(X)
-    print(f"loss: {round(loss, 2)}  [{current}/{size}]")
+
+def trainer(dataloader, optimizer, loss_function, model)
+    for batch, (features, labels) in enumerate(dataloader):
+        features = features.to(device)
+        labels = labels.to(device)
+        # Compute prediction error
+        prediction = model(features)
+        loss = loss_function(prediction, labels) #FIND LOSS FUNCTION!!!
+        # Backpropagation
+        loss.backward() #Find Gradients
+        optimizer.step() #Readjust Weights and Biases
+        optimizer.zero_grad() #Reset all the gradients
+    
+        #Every 50 batches, calculates the loss
+        if batch % 50 == 0:
+            loss = loss.item()
+            current = (batch + 1) * len(X)
+            print(f"loss: {round(loss, 2)}  [{current}/{size}]")
