@@ -46,16 +46,13 @@ def get_pam_constellation(M, Es=1):
     
     return const_values
 
-def bits_to_pam_symbols(bits, M):
+def bits_to_pam_symbols(bits, constellation):
     """
     Convert a bit sequence to a sequence of M-PAM symbols.
     """
     # Add your conversion code here.
-    length = int(np.log2(M))
+    length = int(np.log2(len(constellation)))
     symbols = np.zeros(int(len(bits) // length))
-
-    constellation = get_pam_constellation(M)
-
     
     for i in range(len(symbols)):
         symbol = bits[i*length:i*length+length]
