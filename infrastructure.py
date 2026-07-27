@@ -150,6 +150,6 @@ def bits_to_symbol_indices(bits, M):
         # Convert array of bits into a string
         string = ""
         for bit in segment:
-            string += str(b)
+            string += str(bit)
         symbols[i] = int(string, 2)
     return symbols

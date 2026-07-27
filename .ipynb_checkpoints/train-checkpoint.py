@@ -1,9 +1,14 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets
 from torchvision.transforms import v2 #For images
+from model import Constellation, Decoder
+from infrastructure import bits_to_symbol_indices
 import numpy as np
+
+device = torch.device(
+    "mps" if torch.backends.mps.is_available() else "cpu"
+)
 
 class MainDataset(Dataset):
     def __init__(self, features, labels):

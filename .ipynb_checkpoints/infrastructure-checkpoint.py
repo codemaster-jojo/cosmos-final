@@ -112,8 +112,8 @@ def pam_detect(symbols, c):
     """
 
     # Find the M-PAM constellation (i.e., all of the possible symbols).
-    constellation = sorted(c)
-    boundaries = get_decision_boundaries(constellation)
+    constellation = np.sort(np.asarray(c, dtype=float))
+    boundaries = get_decision_boundaries(constellation.copy())
     
     # Choose the nearest constellation symbol for each noisy symbol.
     detected_symbols = np.zeros_like(symbols)
@@ -139,3 +139,17 @@ def bits_to_bytes(bits):
     """
     # Add your conversion code here.
     return np.packbits(bits.astype(np.uint8)).tobytes()
+
+def bits_to_symbol_indices(bits, M):
+    length = int(np.log2(M))
+    num_symbols = len(bits) // length
+    symbols = np.zeros(num_symbols, dtype=np.int64)
+
+    for i in range(num_symbols):
+        segment = bits[i*length:(i+1)*length]
+        # Convert array of bits into a string
+        string = ""
+        for bit in segment:
+            string += str(bit)
+        symbols[i] = int(string, 2)
+    return symbols
