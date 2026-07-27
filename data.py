@@ -12,8 +12,11 @@ def bit_generator(n):
     with open("list_of_bits.txt", "w", encoding="utf-8") as file:
         file.writelines(list_of_bits)
 
-bit_generator(25000)
+def add_awgn(symbols, noise_level): # for testing purposes, if necessary
+    received = symbols + np.random.randn(len(symbols)) * noise_level
 
-    
-            
-            
+    return received
+
+def collect_real_data():
+    target = []
+    received = []
