@@ -9,7 +9,6 @@ from PIL import Image
 def get_pam_constellation(M, Es=1):
     """
     Generate an M-PAM constellation.
-
     """
     # Add your constellation code here.
     length = int(np.log2(M))

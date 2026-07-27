@@ -1,8 +1,13 @@
+import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import v2
 
-
-x, y = x.to(device), y.to(device)
+x = x.to(device)
+y = y.to(device)
 # Compute prediction error
-prediction = model(X)
+prediction = model(x)
 loss = loss_fn(prediction, y)
 # Backpropagation
 # loss.backward()

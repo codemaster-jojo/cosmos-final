@@ -11,7 +11,6 @@ def bit_generator(n):
         list_of_bits.append(string)
     with open("list_of_bits.txt", "w", encoding="utf-8") as file:
         file.writelines(list_of_bits)
-    return list_of_bits
 
 bit_generator(25000)
 
