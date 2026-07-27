@@ -32,7 +32,7 @@ def send_real_data(constellation):
     tx = PlutoTransmitter()
     tx.set_sdr(sdr_tx)
     tx.set_channel(9)
-    tx.set_power_level(95)
+    tx.set_power_level(75)
 
     # l = int(np.log2(len(constellation)))
 
@@ -49,10 +49,6 @@ def send_real_data(constellation):
         time.sleep(1)
     '''
     tx.transmit(bits_to_pam_symbols(target[0], constellation))
-
-    while True:
-        print("transmittingasdfdfs", bits_to_pam_symbols(target[0], constellation))
-        time.sleep(1)
     
 
 def receive_real_data(constellation, target):
@@ -85,6 +81,13 @@ def receive_real_data(constellation, target):
 target = []
 with open("list_of_bits.txt", "r") as f:
     target = [int(line.strip(), 2) for line in f]
-    
+
 # send_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5])
 # receive_real_data([-1.5, -1.1, -0.65, -0.22, 0.22, 0.65, 1.1, 1.5], [target[0]])
+
+# write code here
+
+
+while True:
+    print("transmitting")
+    time.sleep(5)
