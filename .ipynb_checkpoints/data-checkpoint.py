@@ -72,13 +72,15 @@ def receive_real_data(constellation, target):
         rx_symbols = rx.receive()
     
         # REMOVE LATER W/ DECODER MODEL
+        '''
         decoded = pam_symbols_to_bits(rx_symbols, constellation)
         decoded_arr.append(decoded)
-
+        '''
     
-    print("Errors:", sum(np.array(target) != np.array(decoded_arr)))        
+        # print("Errors:", sum(np.array(target) != np.array(decoded_arr)))        
+        print(np.real(rx_symbols))
 
-    return rx_symbols, decoded, target
+    return rx_symbols, decoded_arr, target
 
 target = []
 with open("list_of_bits.txt", "r") as f:
