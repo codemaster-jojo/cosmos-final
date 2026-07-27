@@ -1,7 +1,6 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
-from torchvision.transforms import v2 #For images
 from model import Constellation, Decoder
 from infrastructure import bits_to_symbol_indices
 import numpy as np
@@ -50,7 +49,8 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         transmitted = constellation(symbol_indices)
 
         # # AWGN channel
-        noise = torch.zeros_like(transmitted) # 0.1 * torch.randn_like(transmitted)
+        # noise = torch.zeros_like(transmitted) # 
+        noise = 0.1 * torch.randn_like(transmitted)
         received = transmitted + noise
 
         # Neural decoder
@@ -63,3 +63,4 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         if batch % 50 == 0:
             print(loss.item())
             print(constellation.normalized_points())
+            print(decoder.get_boundaries())
