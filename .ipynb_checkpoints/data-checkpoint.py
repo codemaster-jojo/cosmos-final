@@ -1,6 +1,10 @@
 import numpy as np
 from infrastructure import *
 import time
+import adi
+
+from cosmos import *
+from digicomm import *
 
 #NEVER RUN AGAIN!!!!!
 def bit_generator(n):
@@ -33,7 +37,7 @@ def send_real_data(constellation):
     # l = int(np.log2(len(constellation)))
 
     
-    with open(filename, "r") as f:
+    with open("list_of_bits.txt", "r") as f:
         target = [int(line.strip(), 2) for line in f]
 
     target_truncated = [target[0], target[1], target[2]] # CHANGE LATER
