@@ -61,5 +61,7 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
             print(f"Step {step} | Loss: {loss.item()}")
             print(constellation.normalized_points())
             print(decoder.get_boundaries())
+        if step > max_steps:
+            return
 
     return data_points
