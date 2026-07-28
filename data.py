@@ -95,4 +95,5 @@ while True:
 
 #RANDOM SYMBOL GENERATOR
 
-def generate_data(num
+def generate_data(nums, low = -2.0, high = 2.0):
+    return np.random.uniform(low, high, nums)
