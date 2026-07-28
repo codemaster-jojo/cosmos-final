@@ -41,9 +41,16 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 def trainer(dataloader, constellation, decoder, optimizer, loss_function):
     constellation.train() #sets the nn into training mode
     decoder.train()
+<<<<<<< Updated upstream
     data_points = [] # to plot, not necessary elsewhere
     
     for batch,(symbol_indices, labels) in enumerate(dataloader):
+=======
+    step = 0
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2000, gamma=0.5) #Cuts LR in half every 2000 steps to fine-tune
+    # for batch,(symbol_indices, labels) in enumerate(dataloader):
+    for symbol_indices, labels in dataloader:
+>>>>>>> Stashed changes
         symbol_indices = symbol_indices.to(device)
         labels = labels.to(device)
 
@@ -51,7 +58,7 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         transmitted = constellation(symbol_indices)
 
         # # AWGN channel
-        # noise = torch.zeros_like(transmitted) # 
+        # Gaussian rn
         noise = 0.1 * torch.randn_like(transmitted)
         '''
         noise = torch.from_numpy(
