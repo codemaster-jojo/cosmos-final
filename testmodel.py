@@ -17,8 +17,9 @@ def main():
     for i, s in enumerate(tx_symbols):
         print(f"Symbol {i}: {s.item():.4f}")
 
-
+    # ----------------------------
     # Decode without noise
+    # ----------------------------
     decoded = decoder.decode_hard(tx_symbols)
 
     print("\nNo Noise Test")
@@ -31,7 +32,9 @@ def main():
     else:
         print("FAIL")
 
+    # ----------------------------
     # Decode with Gaussian noise
+    # ----------------------------
     noise_std = 0.15
     noisy_symbols = tx_symbols + noise_std * torch.randn_like(tx_symbols)
 
