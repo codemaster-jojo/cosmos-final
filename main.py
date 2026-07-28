@@ -45,4 +45,5 @@ trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function
 
 torch.save(decoder_model.state_dict(), "decoder.pth")
 torch.save(constellation_model.state_dict(), "constellation.pth")
+print("Model Saved!")
 # SAVING THE MODEL TO DECODER.PTH / CONSTELLATION.PTH
