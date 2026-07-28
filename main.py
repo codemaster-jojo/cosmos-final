@@ -22,7 +22,7 @@ constellation_model.load_state_dict(torch.load("constellation.pth"), map_locatio
 loss_function = nn.MSELoss()
 optimizer = optim.Adam(
     list(constellation_model.parameters()) + list(decoder_model.parameters()),
-    lr=0.001,
+    lr=0.01,
 )
 
 with open("list_of_bits.txt", "r") as file:
@@ -36,15 +36,13 @@ all_symbols = np.array(all_symbols, dtype=np.uint8)[:16000]
 dataset = MainDataset(all_symbols, all_symbols)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-<<<<<<< Updated upstream
 data_distrb = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function)
-
 plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
-=======
+
+
 trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function)
 
 
 torch.save(decoder_model.state_dict(), "decoder.pth")
 torch.save(constellation_model.state_dict(), "constellation.pth")
 # SAVING THE MODEL TO DECODER.PTH / CONSTELLATION.PTH
->>>>>>> Stashed changes

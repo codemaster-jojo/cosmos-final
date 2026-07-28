@@ -20,37 +20,14 @@ class MainDataset(Dataset):
     def __getitem__(self, index):
         return self.features[index], self.labels[index]
 
-constellation = Constellation().to(device)
-decoder = Decoder().to(device)
-loss_function = nn.MSELoss()
-optimizer = optim.Adam(list(constellation.parameters()) + list(decoder.parameters()), lr = 0.001) #lr is essentially how big of an adjustment we want at the beginning
-
-with open("list_of_bits.txt","r") as file:
-    all_symbols = []
-    for line in file:
-        bits = []
-        for bit in line.strip(): #line.strip removes \n at the end
-            bits.append(int(bit))
-        symbols = bits_to_symbol_indices(bits, 8) #Converts the bits in groups of 3 to the INDEX of the symbol (0-7)
-        all_symbols.extend(symbols)
-all_symbols = np.array(all_symbols, dtype = np.uint8)
-
-dataset = MainDataset(all_symbols, all_symbols) #the first all_symbols will be transformed by the noise
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-
-def trainer(dataloader, constellation, decoder, optimizer, loss_function):
+def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps = 15000, report_every = 1000):
     constellation.train() #sets the nn into training mode
     decoder.train()
-<<<<<<< Updated upstream
     data_points = [] # to plot, not necessary elsewhere
-    
-    for batch,(symbol_indices, labels) in enumerate(dataloader):
-=======
     step = 0
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2000, gamma=0.5) #Cuts LR in half every 2000 steps to fine-tune
     # for batch,(symbol_indices, labels) in enumerate(dataloader):
     for symbol_indices, labels in dataloader:
->>>>>>> Stashed changes
         symbol_indices = symbol_indices.to(device)
         labels = labels.to(device)
 
@@ -64,14 +41,13 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         noise = torch.from_numpy(
             np.random.gamma(shape=2, scale=1, size=transmitted.shape)
         ).float().to(transmitted.device)
-        
+         
         noise -= torch.mean(noise)
         noise *= 0.1
         '''
         
         received = transmitted + noise
         data_points += received.tolist()
-        
 
         # Neural decoder
         prediction = decoder(received)
@@ -80,8 +56,9 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        if batch % 2 == 0:
-            print(loss.item())
+        step += 1
+        if step % report_every == 0:
+            print(f"Step {step} | Loss: {loss.item()}")
             print(constellation.normalized_points())
             print(decoder.get_boundaries())
 
