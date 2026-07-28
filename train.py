@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 from model import Constellation, Decoder
 from infrastructure import bits_to_symbol_indices, calculate_BER, pam_symbols_to_bits, pam_from_indices
 import numpy as np
+from data import *
 
 device = torch.device(
     "mps" if torch.backends.mps.is_available() else "cpu"
@@ -34,6 +35,7 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
         transmitted = constellation(symbol_indices)
         noise = 0.1 * torch.randn_like(transmitted)
         received = transmitted + noise
+        
         data_points += received.tolist()
         decoder.temperature = min(50.0, 5.0 + step * 0.05) 
         prediction = decoder(received)
@@ -68,6 +70,3 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
         optimizer.step()
 
     return data_points, np.array(loss_over_time)
-
-
-    

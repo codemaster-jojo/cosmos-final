@@ -97,7 +97,7 @@ class PlutoTransmitter:
         return
 
     def scale_transmit_signal(self,signal):
-        scale = 0.5
+        scale = 1.0
         max_val = np.max(np.abs([np.real(signal), np.imag(signal)]))
         signal_scaled = signal / max_val * scale * (2**14 - 1) 
         return signal_scaled
