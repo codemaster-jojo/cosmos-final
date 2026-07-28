@@ -6,25 +6,24 @@ from infrastructure import bits_to_symbol_indices
 from train import MainDataset, trainer, device
 from visualize import *
 import numpy as np
-'''
-constellation_model = Constellation().to(device)
-decoder_model = Decoder().to(device)
-
-LOAD MODEL FROM DECODER.PTH + CONSTELLATION.PTH
-'''
 
 device = torch.device(
     "mps" if torch.backends.mps.is_available() else "cpu"
 )
 
+'''
+DO THIS IF IT IS YOUR FIRST TIME RUNNING THIS PROGRAM
+constellation_model = Constellation().to(device)
+decoder_model = Decoder().to(device)
+'''
+
 decoder_model = Decoder()
 decoder_model = decoder_model.to(device)
-decoder_model.load_state_dict(torch.load("decoder.pth")) #, map_location=device)
+decoder_model.load_state_dict(torch.load("decoder.pth"))
 
 constellation_model = Constellation()
 constellation_model = constellation_model.to(device)
-constellation_model.load_state_dict(torch.load("constellation.pth")) #, map_location=device)
-
+constellation_model.load_state_dict(torch.load("constellation.pth"))
 
 loss_function = nn.MSELoss()
 optimizer = optim.Adam(
