@@ -46,7 +46,7 @@ def tx_loop():
             symbols = symbols[:NUM_SYMBOLS]
 
         while running:
-            print(f"\n========== PACKET {i} ==========")
+            print(f"\nPACKET {i}")
             #print("TX:", np.round(symbols[:30], 3))
 
             try:

@@ -451,6 +451,7 @@ class PlutoReceiver:
     def receive(self):
         self.sdr.rx_destroy_buffer()
         rx_signal = self.fetch_rx_buffer()
+        print('Max: ', np.max(np.abs(rx_signal))) # if its around 2048, too high
         rx_signal -= np.mean(rx_signal) # remove DC component from RX signal
         rx_signal = self.matched_filter(rx_signal)
         symbols = self.symbol_synchronization(rx_signal,interp=8,debug=False)

@@ -77,7 +77,7 @@ def receive_real_data(constellation, target):
         print(np.real(rx_symbols))
 
     return rx_symbols, decoded_arr, target
-
+'''
 target = []
 with open("list_of_bits.txt", "r") as f:
     target = [int(line.strip(), 2) for line in f]
@@ -91,7 +91,7 @@ with open("list_of_bits.txt", "r") as f:
 while True:
     print("transmitting")
     time.sleep(5)
-
+'''
 
 #RANDOM SYMBOL GENERATOR
 
