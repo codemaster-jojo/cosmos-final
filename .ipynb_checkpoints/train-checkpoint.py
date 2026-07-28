@@ -20,10 +20,11 @@ class MainDataset(Dataset):
     def __getitem__(self, index):
         return self.features[index], self.labels[index]
 
-def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps = 15000, report_every = 1000):
+def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps = 15000, report_every = 500):
     constellation.train() #sets the nn into training mode
     decoder.train()
     data_points = [] # to plot, not necessary elsewhere
+    loss_over_time = [] # also to plot
     step = 0
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2000, gamma=0.5) #Cuts LR in half every 2000 steps to fine-tune
     # for batch,(symbol_indices, labels) in enumerate(dataloader):
@@ -58,10 +59,10 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
         optimizer.step()
         step += 1
         if step % report_every == 0:
-            print(f"Step {step} | Loss: {loss.item()}")
-            print(constellation.normalized_points())
-            print(decoder.get_boundaries())
+            loss_over_time.append(loss.item())
+            # print(f"Step {step} | Loss: {loss.item()}")
+            # print(constellation.normalized_points())
+            # print(decoder.get_boundaries())
         if step > max_steps:
-            return
-
-    return data_points
+            return data_points, np.array(loss_over_time)
+    return data_points, np.array(loss_over_time)

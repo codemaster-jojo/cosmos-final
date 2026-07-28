@@ -13,3 +13,13 @@ def plot_constellation(constellation, boundaries, distribution):
 
     plt.legend()
     plt.show()
+
+
+def plot_loss(loss):
+    plt.plot(loss, label="Loss over Time")
+
+    plt.xlabel("Time", fontsize=12) # model is too small to need epochs so we just used batches
+    plt.ylabel("Loss", fontsize=12)
+    
+    plt.legend()
+    plt.show()
