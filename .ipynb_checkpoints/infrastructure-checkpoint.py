@@ -153,3 +153,16 @@ def bits_to_symbol_indices(bits, M):
             string += str(bit)
         symbols[i] = int(string, 2)
     return symbols
+
+def calculate_BER(received, expected):
+    ber = 0
+    for i in range(len(received)):
+        if received[i] != expected[i]:
+            ber += 1
+    return ber / len(received)
+
+def pam_from_indices(constellation, indices):
+    pam_symbols = []
+    for i in range(len(indices)):
+        pam_symbols.append(constellation[indices[i]])
+    return pam_symbols
