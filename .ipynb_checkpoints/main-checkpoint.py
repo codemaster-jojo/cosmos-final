@@ -6,13 +6,15 @@ from infrastructure import bits_to_symbol_indices
 from train import MainDataset, trainer, device
 from visualize import *
 import numpy as np
+from torch.utils.data import random_split, TensorDataset
+
 
 device = torch.device(
     "mps" if torch.backends.mps.is_available() else "cpu"
 )
 
 '''
-DO THIS IF IT IS YOUR FIRST TIME RUNNING THIS PROGRAM
+# DO THIS IF IT IS YOUR FIRST TIME RUNNING THIS PROGRAM
 constellation_model = Constellation().to(device)
 decoder_model = Decoder().to(device)
 '''
@@ -28,8 +30,9 @@ constellation_model.load_state_dict(torch.load("constellation.pth", weights_only
 loss_function = nn.MSELoss()
 optimizer = optim.Adam(
     list(constellation_model.parameters()) + list(decoder_model.parameters()),
-    lr=0.01,
+    lr=0.001,
 )
+
 
 with open("list_of_bits.txt", "r") as file:
     all_symbols = []
@@ -40,9 +43,12 @@ with open("list_of_bits.txt", "r") as file:
 all_symbols = np.array(all_symbols, dtype=np.uint8)
 
 dataset = MainDataset(all_symbols, all_symbols)
-dataloader = DataLoader(dataset, batch_size=1024, shuffle=True)
+train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
+dataloader = DataLoader(train_set, batch_size=1024, shuffle=True)
 
-data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function, max_steps=1000, report_every=100)
+
+data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function, max_steps=20000, report_every=1000)
+
 plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
 plot_loss(loss_over_time)
 
@@ -51,3 +57,4 @@ torch.save(decoder_model.state_dict(), "decoder.pth")
 torch.save(constellation_model.state_dict(), "constellation.pth")
 print("Model Saved!")
 # SAVING THE MODEL TO DECODER.PTH / CONSTELLATION.PTH
+# We have 80,000 batches
