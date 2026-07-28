@@ -91,3 +91,8 @@ with open("list_of_bits.txt", "r") as f:
 while True:
     print("transmitting")
     time.sleep(5)
+
+
+#RANDOM SYMBOL GENERATOR
+
+def generate_data(num
