@@ -41,6 +41,8 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 def trainer(dataloader, constellation, decoder, optimizer, loss_function):
     constellation.train() #sets the nn into training mode
     decoder.train()
+    data_points = [] # to plot, not necessary elsewhere
+    
     for batch,(symbol_indices, labels) in enumerate(dataloader):
         symbol_indices = symbol_indices.to(device)
         labels = labels.to(device)
@@ -61,6 +63,8 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
         '''
         
         received = transmitted + noise
+        data_points += received.tolist()
+        
 
         # Neural decoder
         prediction = decoder(received)
@@ -73,3 +77,5 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function):
             print(loss.item())
             print(constellation.normalized_points())
             print(decoder.get_boundaries())
+
+    return data_points

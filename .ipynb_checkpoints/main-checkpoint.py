@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from model import Constellation, Decoder
 from infrastructure import bits_to_symbol_indices
 from train import MainDataset, trainer, device
+from visualize import *
 import numpy as np
 
 constellation_model = Constellation().to(device)
@@ -25,4 +26,6 @@ all_symbols = np.array(all_symbols, dtype=np.uint8)[:16000]
 dataset = MainDataset(all_symbols, all_symbols)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function)
+data_distrb = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function)
+
+plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
