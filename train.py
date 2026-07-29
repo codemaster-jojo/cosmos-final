@@ -43,7 +43,7 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
         received = transmitted + noise
         
         data_points += received.tolist()
-        decoder.temperature = min(50.0, 5.0 + step * 0.05) 
+        decoder.temperature = min(10, 5.0 + step * 0.05) 
         prediction = decoder(received)
         loss = loss_function(prediction, labels)
         recent_losses.append(loss.item())  # track every step's loss for averaging
@@ -63,7 +63,7 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
             received_np = received_symbols.detach().cpu().numpy()
             pam_symbols = pam_from_indices(constellation_np, received_np)
             raw_received_bits = pam_symbols_to_bits(pam_symbols, constellation_np)
-            print(f"Step {step} | Avg Loss: {avg_loss:.4f} | BER: {calculate_BER(raw_received_bits, raw_bits):.3f} | LR: {optimizer.param_groups[0]['lr']:.6f}")
+            print(f"Step {step} | Avg Loss: {avg_loss:.5f} | BER: {calculate_BER(raw_received_bits, raw_bits):.5f} | LR: {optimizer.param_groups[0]['lr']:.6f}")
 
         if step == max_steps - 1:
             print(constellation.normalized_points())
