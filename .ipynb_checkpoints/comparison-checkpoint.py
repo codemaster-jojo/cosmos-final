@@ -8,12 +8,12 @@ from digicomm import *
 from data import *
 
 tx = PlutoTransmitter()
-sdr_tx = adi.Pluto("usb:1.1.5")
+sdr_tx = adi.Pluto("usb:0.1.5")
 tx.set_sdr(sdr_tx)
 tx.set_channel(9)
 tx.set_power_level(90) # 70
 
-sdr_rx = adi.Pluto("usb:0.1.5")
+sdr_rx = adi.Pluto("usb:1.1.5")
 
 rx = PlutoReceiver()
 rx.set_sdr(sdr_rx)
@@ -66,8 +66,8 @@ standard = calculate_ber([
                  1.9011,
                  1.5275
             ])
+
+model = calculate_ber([-1.6470, -0.9732, -0.5194, -0.1634,  0.1576,  0.5136,  0.9718,  1.6766])
+
 print("Standard constellation BER:", standard)
-
-model = calculate_ber([1.5275, -1.0911, -0.6547, -0.2182,  0.2182,  0.6547,  1.0911,  1.5275])
-
-print("Model constellation BER:   ", standard)
+print("Model constellation BER:   ", model)
