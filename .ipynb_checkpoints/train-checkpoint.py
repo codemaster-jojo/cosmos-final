@@ -73,16 +73,14 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
     return data_points, np.array(loss_over_time)
 
 
-# --- Loss ---
+# Loss
 def mdn_loss(weights, means, stds, target):
     target = target.unsqueeze(-1)
     log_probs = torch.distributions.Normal(means, stds).log_prob(target)
     weighted = torch.log(weights + 1e-8) + log_probs
     return -torch.logsumexp(weighted, dim=-1).mean()
 
-
-
-def radio_trainer(dataloader, noise_MDN, optimizer, loss_function, scheduler, max_epochs = 1):
+def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epochs = 5):
     train_loss_history = []
     val_loss_history = []
     best_val_loss = float("inf")
