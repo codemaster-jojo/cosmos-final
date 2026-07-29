@@ -81,7 +81,7 @@ def mdn_loss(weights, means, stds, target):
 
 
 
-def trainer(dataloader, noise_MDN, optimizer, loss_function, scheduler, max_epochs = 20):
+def radio_trainer(dataloader, noise_MDN, optimizer, loss_function, scheduler, max_epochs = 1):
     train_loss_history = []
     val_loss_history = []
     best_val_loss = float("inf")
