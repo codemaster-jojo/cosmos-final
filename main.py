@@ -48,14 +48,15 @@ train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
 dataloader = DataLoader(train_set, batch_size=1024, shuffle=True)
 
 
-data_distrb, loss_over_time = real_world_trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function, max_steps=20000, report_every=1000)
+data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function, max_steps=5000, report_every=1000)
 
 plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
 plot_loss(loss_over_time)
 
 
+'''
 torch.save(decoder_model.state_dict(), "decoder_irl_test.pth")
 torch.save(constellation_model.state_dict(), "constellation_irl_test.pth")
 print("Model Saved!")
 # SAVING THE MODEL TO DECODER.PTH / CONSTELLATION.PTH
-# We have 80,000 batches
+'''

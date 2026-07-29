@@ -168,7 +168,4 @@ def pam_from_indices(constellation, indices):
     return pam_symbols
 
 def apply_gain(symbols):
-    gain = []
-    for symbol in symbols:
-        gain.append(symbol / (1 + (symbol*symbol))) #As x gets smaller, the function approaches x
-    return gain
+    return symbols / (1 + 0.5*symbols**2)
