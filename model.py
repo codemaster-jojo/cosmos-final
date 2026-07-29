@@ -44,10 +44,11 @@ class Constellation(nn.Module):
 
 
 class NoiseMDN(nn.Module):
-    def __init__(self, num_symbols=8, embed_dim=8, hidden=64, K=4): 
+    def __init__(self, num_symbols=8, embed_dim=3, hidden=64, K=3): 
         #K is how many Gaussians we want to sum up to find the probability distribution for the noise of a given number
         super().__init__()
         self.symbol_embed = nn.Embedding(num_symbols, embed_dim)
+        #Embedding: if I directly input symbol indices, the Sequential will treat index 7 > index 5. Embedding assigns each symbol to a random vector that is parametrized and learnable
         self.net = nn.Sequential(
             nn.Linear(embed_dim, hidden),
             nn.ReLU(),
@@ -57,25 +58,25 @@ class NoiseMDN(nn.Module):
         #THREE SEPARATE LAYERS
         self.weight_head = nn.Linear(hidden, K) #How important each Gaussian is
         self.mean_head = nn.Linear(hidden, K) #Where is the center of the Gaussian
-        self.logstd_head = nn.Linear(hidden, K) #How certain each Gaussian is - High log standard deviation = flat distribution
+        self.logstd_head = nn.Linear(hidden, K) #How uncertain each Gaussian is-High log standard deviation=flat distribution
 
     def forward(self, symbol_indices): #MAKES THE NOISE PARAMETERS (WEIGHTS, MEANS, STDS)
         h = self.net(self.symbol_embed(symbol_indices))
-        weights = torch.softmax(self.weight_head(h), dim=-1)
+        weights = torch.softmax(self.weight_head(h), dim=-1) #softmax converts numbers into a probability distribution
         means = self.mean_head(h)
-        stds = torch.nn.functional.softplus(self.logstd_head(h)) + 1e-3  # keep std > 0, avoid collapse
+        stds = torch.nn.functional.softplus(self.logstd_head(h)) + 1e-3  # keep std > 0, avoid collapse, softplus = better log
         return weights, means, stds
 
     def sample(self, symbol_indices): #RETURNS THE SYMBOLS WITH THE NOISE
         with torch.no_grad():
             weights, means, stds = self.forward(symbol_indices)
-            k = torch.multinomial(weights, num_samples=1).squeeze(-1)
-            chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1)
+            k = torch.multinomial(weights, num_samples=1).squeeze(-1) #randomly picks one element with the weights as probs
+            chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1) #gather looks along columns (1) and picks the kth item
             chosen_std = stds.gather(1, k.unsqueeze(1)).squeeze(1)
-            return torch.normal(chosen_mean, chosen_std)
+            #Unsqueezed and then squeezed to satisfy dimension requirements
+            return torch.normal(chosen_mean, chosen_std) #Picks random item in the normal distribution given the parameters
 
 class Decoder(nn.Module):
-
     def __init__(self, M=8, temperature=10.0):
         super().__init__()
         self.M = M
