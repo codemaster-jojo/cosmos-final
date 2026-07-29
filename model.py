@@ -8,7 +8,8 @@ class Constellation(nn.Module):
         super().__init__()
         self.M = M
         self.Es = Es
-        
+
+        '''
         self.points = nn.Parameter(
             torch.tensor([
                 -1.5275252316519465,
@@ -19,6 +20,12 @@ class Constellation(nn.Module):
                  0.6546536707079771,
                  1.0910894511799618,
                  1.5275252316519465
+            ], dtype=torch.float32)
+        )
+        '''
+        self.points = nn.Parameter(
+            torch.tensor([
+                -2.0, -1.5, -1.0, -0.2, 0.4, 1, 1.5, 2.5
             ], dtype=torch.float32)
         )
                

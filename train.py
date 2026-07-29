@@ -39,6 +39,7 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
         # noise = 0.1 * torch.randn_like(gain_transmitted)
         #noise = (0.5 + torch.abs(transmitted)**0.8) * 0.05 * torch.randn_like(transmitted)
         received = noiseMDN.sample(transmitted)
+        
         # received = gain_transmitted + noise
         # received = transmitted + noise
         
