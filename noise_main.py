@@ -48,7 +48,16 @@ train_hist, val_hist = radio_trainer(model, train_loader, val_loader, optimizer,
 plot_loss(train_hist)
 
 plot_radio_model(model, features)
-
+plot_constellation_with_model(model, torch.tensor([
+                -1.5275252316519465,
+                -1.0910894511799618,
+                -0.6546536707079771,
+                -0.21821789023599236,
+                 0.21821789023599236,
+                 0.6546536707079771,
+                 1.0910894511799618,
+                 1.5275252316519465
+            ]))
 
 #SAVING IS EMBEDDED IN TRAIN FUNCTION
 

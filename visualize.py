@@ -39,8 +39,8 @@ def plot_noise(file_path):
     plt.figure(figsize=(8,6))
     plt.hexbin(symbols, noise, gridsize=100, cmap="viridis", bins="log")
     plt.colorbar(label="log(count)")
-    plt.xlabel("Symbol")
-    plt.ylabel("Noise")
+    plt.xlabel("Symbol In")
+    plt.ylabel("Symbol Out")
     plt.title("Noise through Wire Channel")
     plt.show()
 
@@ -68,4 +68,37 @@ def plot_radio_model(model, x, num_inputs=2000, samples_each=200):
     plt.colorbar(label="log(count)")
     plt.xlabel("Transmitted")
     plt.ylabel("Received")
+    plt.show()
+
+def plot_constellation_with_model(model, constellation, num_repeat=1000):
+    model.eval()
+    device = next(model.parameters()).device
+
+    rng = np.random.default_rng()
+
+    symbols = np.array(constellation.tolist() * num_repeat, dtype=np.float32)
+    rng.shuffle(symbols)
+
+    x = torch.tensor(symbols[:, None], dtype=torch.float32).to(device)
+
+    with torch.no_grad():
+        w, m, std = model(x)
+
+        # remove extra dimensions
+        w = w.squeeze()
+        m = m.squeeze()
+        std = std.squeeze()
+
+        c = torch.multinomial(w, 1).squeeze(1)
+
+        received = (
+            m[torch.arange(len(x)), c]
+            + std[torch.arange(len(x)), c] * torch.randn(len(x), device=device)
+        )
+
+    plt.figure(figsize=(6,6))
+    plt.hist(received.cpu().numpy(), bins=500)
+    plt.xlabel("Symbol Received")
+    plt.ylabel("Count")
+    plt.grid(True)
     plt.show()
