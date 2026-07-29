@@ -38,9 +38,9 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
         # gain_transmitted = torch.tensor(apply_gain(transmitted)).to(device)
         # noise = 0.1 * torch.randn_like(gain_transmitted)
         #noise = (0.5 + torch.abs(transmitted)**0.8) * 0.05 * torch.randn_like(transmitted)
-        noise = noiseMDN.sample(transmitted)
+        received = noiseMDN.sample(transmitted)
         # received = gain_transmitted + noise
-        received = transmitted + noise
+        # received = transmitted + noise
         
         data_points += received.tolist()
         decoder.temperature = min(10, 5.0 + step * 0.05) 

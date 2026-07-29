@@ -31,6 +31,7 @@ constellation_model = Constellation()
 constellation_model = constellation_model.to(device)
 constellation_model.load_state_dict(torch.load("constellation_irl_test.pth", weights_only = True))
 
+
 with torch.no_grad():
     sample_transmitted = constellation_model(torch.tensor([0]).to(device))
     noise_samples = torch.stack([noise_model.sample(sample_transmitted) for _ in range(1000)])
@@ -44,7 +45,7 @@ optimizer = optim.Adam(
 )
 
 
-with open("/Users/alyang/Downloads/cosmos-final/list_of_bits.txt", "r") as file:
+with open("list_of_bits.txt", "r") as file:
     all_symbols = []
     for line in file:
         bits = [int(bit) for bit in line.strip()]
@@ -57,7 +58,7 @@ train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
 dataloader = DataLoader(train_set, batch_size=1024, shuffle=True)
 
 
-data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, noise_model, optimizer, loss_function, max_steps=1000, report_every=100)
+data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, noise_model, optimizer, loss_function, max_steps=10000, report_every=1000)
 
 plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
 plot_loss(loss_over_time)
