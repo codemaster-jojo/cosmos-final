@@ -135,7 +135,7 @@ def trainer(dataloader, noise_MDN, optimizer, loss_function, scheduler, max_epoc
         if val_loss < best_val_loss - 0.0001: #0.0001 checks for REAL improvement, not negligible decreases
             best_val_loss = val_loss
             epochs_since_improvement = 0
-            torch.save(model.state_dict(), )
+            torch.save(model.state_dict(), "noise_mdn.pth")
         else:
             epochs_since_improvement += 1
             if epochs_since_improvement >= 5:
