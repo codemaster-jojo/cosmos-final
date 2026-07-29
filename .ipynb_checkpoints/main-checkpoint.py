@@ -22,7 +22,12 @@ noise_model = NoiseMDN()
 noise_model = noise_model.to(device)
 noise_model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
 
+constellation_model = Constellation()
+constellation_model = constellation_model.to(device)
 
+decoder_model = Decoder(constellation_model).to(device)
+
+'''
 decoder_model = Decoder()
 decoder_model = decoder_model.to(device)
 decoder_model.load_state_dict(torch.load("decoder_irl_test.pth", weights_only = True))
@@ -30,7 +35,7 @@ decoder_model.load_state_dict(torch.load("decoder_irl_test.pth", weights_only = 
 constellation_model = Constellation()
 constellation_model = constellation_model.to(device)
 constellation_model.load_state_dict(torch.load("constellation_irl_test.pth", weights_only = True))
-
+'''
 
 with torch.no_grad():
     sample_transmitted = constellation_model(torch.tensor([0]).to(device))
@@ -40,9 +45,11 @@ print(noise_samples.std().item())
 
 loss_function = nn.MSELoss()
 optimizer = optim.Adam(
-    list(constellation_model.parameters()) + list(decoder_model.parameters()),
+    list(constellation_model.parameters()),
     lr=0.001,
 )
+
+# + list(decoder_model.parameters())
 
 
 with open("list_of_bits.txt", "r") as file:
@@ -64,7 +71,7 @@ plot_constellation(constellation_model.normalized_points(), decoder_model.get_bo
 plot_loss(loss_over_time)
 
 
-torch.save(decoder_model.state_dict(), "decoder_irl_test.pth")
+# torch.save(decoder_model.state_dict(), "decoder_irl_test.pth")
 torch.save(constellation_model.state_dict(), "constellation_irl_test.pth")
 print("Model Saved!")
 # SAVING THE MODEL TO DECODER.PTH / CONSTELLATION.PTH

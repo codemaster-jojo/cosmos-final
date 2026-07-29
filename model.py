@@ -64,24 +64,15 @@ class NoiseMDN(nn.Module):
         stds = torch.nn.functional.softplus(self.logstd_head(h)) + 1e-3  # keep std > 0, avoid collapse, softplus = better log
         return weights, means, stds
 
-    # def sample(self, transmitted): #RETURNS THE SYMBOLS WITH THE NOISE [1, 2, 3, 4, 5]
-    #     with torch.no_grad():
-    #         weights, means, stds = self.forward(transmitted) # all three look like [[1, 3, 2, 4, 5]] (2D!!!)
-    #         k = torch.multinomial(weights, num_samples=1).squeeze(-1) #randomly picks one element with the weights as probs
-    #         # [1]
-    #         chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1) #gather looks along dim=1 (columns) and picks the kth item
-    #         chosen_std = stds.gather(1, k.unsqueeze(1)).squeeze(1)
-    #         return torch.normal(chosen_mean, chosen_std) #Picks random item in the normal distribution given the parameters
-
     def sample(self, transmitted):
         weights, means, stds = self.forward(transmitted)
         mixture_mean = (weights * means).sum(dim=-1) #Each Gaussian mean is multiplied by its importance to find center of the mix. Sums this for every single symbol, so if transmitted has 1000 symbols, size [1000]
         mixture_variance = (weights * (stds**2 + means**2)).sum(dim=-1) - mixture_mean**2
-        #Variance = E[X^2] - (E[X])^2. E[X] = 
+        #Variance = E[X^2] - (E[X])^2. E[X] = mixture_mean
     
-        mixture_variance = torch.clamp(mixture_variance, min=1e-6) 
-        epsilon = torch.randn_like(mixture_mean) #Generates Gaussian Distribution Matrix the size of mixture_mean
-        received = mixture_mean + torch.sqrt(mixture_variance) * epsilon
+        mixture_variance = torch.clamp(mixture_variance, min=1e-6) #Keep everything positive
+        random_nums = torch.randn_like(mixture_mean) #Generates Gaussian Distribution Matrix the size of mixture_mean
+        received = mixture_mean + torch.sqrt(mixture_variance) * random_nums
         return received
 
 
