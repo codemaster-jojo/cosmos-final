@@ -33,8 +33,9 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
         labels = labels.to(device)
 
         transmitted = constellation(symbol_indices)
-        noise = 0.1 * torch.randn_like(transmitted)
-        received = transmitted + noise
+        gain_transmitted = apply_gain(transmitted)
+        noise = 0.1 * torch.randn_like(gain_transmitted)
+        received = gain_transmitted + noise
         
         data_points += received.tolist()
         decoder.temperature = min(50.0, 5.0 + step * 0.05) 

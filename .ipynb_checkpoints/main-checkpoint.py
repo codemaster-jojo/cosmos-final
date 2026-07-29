@@ -3,7 +3,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 from model import Constellation, Decoder
 from infrastructure import bits_to_symbol_indices
-from train import MainDataset, trainer, device, real_world_trainer
+from train import MainDataset, trainer, device
 from visualize import *
 import numpy as np
 from torch.utils.data import random_split, TensorDataset
