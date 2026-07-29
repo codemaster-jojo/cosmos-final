@@ -23,3 +23,27 @@ def plot_loss(loss):
     
     plt.legend()
     plt.show()
+
+
+def plot_noise(file_path):
+    symbols = []
+    noise = []
+    
+    with open(file_path, "r") as f:
+        for line in f:
+            a, b = map(float, line.split())   # use int instead of float if appropriate
+            symbols.append(a)
+            noise.append(b-a)
+
+    plt.figure(figsize=(8,6))
+    plt.hexbin(symbols, noise, gridsize=100, cmap="viridis", bins="log")
+    plt.colorbar(label="log(count)")
+    plt.xlabel("Symbol")
+    plt.ylabel("Noise")
+    plt.title("Noise through Wire Channel")
+    plt.show()
+
+plot_noise("signals_through_wire.txt")
+
+    
+    
