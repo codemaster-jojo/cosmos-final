@@ -8,7 +8,6 @@ class Constellation(nn.Module):
         super().__init__()
         self.M = M
         self.Es = Es
-
         '''
         self.points = nn.Parameter(
             torch.tensor([
@@ -22,14 +21,8 @@ class Constellation(nn.Module):
                  1.5275252316519465
             ], dtype=torch.float32)
         )
-        '''
-        self.points = nn.Parameter(
-            torch.tensor([
-                -2.0, -1.5, -1.0, -0.2, 0.4, 1, 1.5, 2.5
-            ], dtype=torch.float32)
-        )
-               
-        #self.points = nn.Parameter(torch.tensor([-2.5, -2.3, -0.9, -0.1, 0.1,  0.9,  2.3,  2.5], dtype=torch.float32))
+        '''      
+        self.points = nn.Parameter(torch.tensor([-2.5, -2.3, -0.9, -0.1, 0.1,  0.9,  2.3,  2.5], dtype=torch.float32))
     def normalized_points(self):
         energy = (self.points ** 2).mean()
         scale = torch.sqrt(self.Es / energy)
@@ -48,6 +41,7 @@ class Constellation(nn.Module):
                     new_points,
                     dtype=torch.float32)
             )
+
 
 class NoiseMDN(nn.Module):
     def __init__(self, hidden=64, K=3): 
@@ -70,47 +64,57 @@ class NoiseMDN(nn.Module):
         stds = torch.nn.functional.softplus(self.logstd_head(h)) + 1e-3  # keep std > 0, avoid collapse, softplus = better log
         return weights, means, stds
 
-    def sample(self, transmitted): #RETURNS THE SYMBOLS WITH THE NOISE [1, 2, 3, 4, 5]
-        with torch.no_grad():
-            weights, means, stds = self.forward(transmitted) # all three look like [[1, 3, 2, 4, 5]] (2D!!!)
-            k = torch.multinomial(weights, num_samples=1).squeeze(-1) #randomly picks one element with the weights as probs
-            # [1]
-            chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1) #gather looks along dim=1 (columns) and picks the kth item
-            chosen_std = stds.gather(1, k.unsqueeze(1)).squeeze(1)
-            return torch.normal(chosen_mean, chosen_std) #Picks random item in the normal distribution given the parameters
+    # def sample(self, transmitted): #RETURNS THE SYMBOLS WITH THE NOISE [1, 2, 3, 4, 5]
+    #     with torch.no_grad():
+    #         weights, means, stds = self.forward(transmitted) # all three look like [[1, 3, 2, 4, 5]] (2D!!!)
+    #         k = torch.multinomial(weights, num_samples=1).squeeze(-1) #randomly picks one element with the weights as probs
+    #         # [1]
+    #         chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1) #gather looks along dim=1 (columns) and picks the kth item
+    #         chosen_std = stds.gather(1, k.unsqueeze(1)).squeeze(1)
+    #         return torch.normal(chosen_mean, chosen_std) #Picks random item in the normal distribution given the parameters
+
+    def sample(self, transmitted):
+        weights, means, stds = self.forward(transmitted)
+        mixture_mean = (weights * means).sum(dim=-1) #Each Gaussian mean is multiplied by its importance to find center of the mix. Sums this for every single symbol, so if transmitted has 1000 symbols, size [1000]
+        mixture_variance = (weights * (stds**2 + means**2)).sum(dim=-1) - mixture_mean**2
+        #Variance = E[X^2] - (E[X])^2. E[X] = 
+    
+        mixture_variance = torch.clamp(mixture_variance, min=1e-6) 
+        epsilon = torch.randn_like(mixture_mean) #Generates Gaussian Distribution Matrix the size of mixture_mean
+        received = mixture_mean + torch.sqrt(mixture_variance) * epsilon
+        return received
+
 
 class Decoder(nn.Module):
-    def __init__(self, M=8, temperature=10.0):
+    def __init__(self, constellation, temperature=10.0):
         super().__init__()
-        self.M = M
-        self.temperature = temperature  # controls how "soft" vs "sharp" boundaries are during training
-        
-        # Init at standard midpoints as a reasonable starting guess
-        init_boundaries = torch.tensor([
-            -1.3093, -0.8729, -0.4364, 0.0, 0.4364, 0.8729, 1.3093
-        ], dtype=torch.float32)
-        
-        #init_boundaries = torch.tensor([-1.3661, -0.9108, -0.2846, 0.0, 0.2846, 0.9108, 1.3661], dtype=torch.float32)
 
-        self.raw_boundaries = nn.Parameter(init_boundaries)
-
+        self.constellation = constellation
+        self.temperature = temperature
+        
     def get_boundaries(self):
-        # Sort to guarantee increasing order, regardless of how gradients move them individually
-        return torch.sort(self.raw_boundaries).values
-
+        points = self.constellation.normalized_points()
+        boundaries = (
+            points[:-1] + points[1:]
+        ) / 2
+        return boundaries
+        
     def forward(self, received_values):
-        boundaries = self.get_boundaries()  # shape (M-1,)
+        boundaries = self.get_boundaries()
         soft_indicators = torch.sigmoid(
-            (received_values.unsqueeze(-1) - boundaries.unsqueeze(0)) * self.temperature
-        )  
-
-        soft_symbol_position = soft_indicators.sum(dim=-1)  
-
-        return soft_symbol_position  # continuous prediction, differentiable
+            (
+                received_values.unsqueeze(-1)
+                - boundaries.unsqueeze(0)
+            ) * self.temperature
+        )
+        soft_symbol_position = soft_indicators.sum(dim=-1)
+        return soft_symbol_position
 
     def decode_hard(self, received_values):
-        # Use this at eval time / real decoding, no gradients needed here
         with torch.no_grad():
             boundaries = self.get_boundaries()
-            predicted_symbols = torch.searchsorted(boundaries, received_values)
+            predicted_symbols = torch.searchsorted(
+                boundaries,
+                received_values
+            )
         return predicted_symbols
