@@ -43,13 +43,10 @@ class Constellation(nn.Module):
             )
 
 class NoiseMDN(nn.Module):
-    def __init__(self, num_symbols=8, embed_dim=3, hidden=64, K=3): 
-        #K is how many Gaussians we want to sum up to find the probability distribution for the noise of a given number
+    def __init__(self, hidden=64, K=3): 
         super().__init__()
-        self.symbol_embed = nn.Embedding(num_symbols, embed_dim)
-        #Embedding: if I directly input symbol indices, the Sequential will treat index 7 > index 5. Embedding assigns each symbol to a random vector that is parametrized and learnable, and will con/diverge based on the similarity of their Gaussians
         self.net = nn.Sequential(
-            nn.Linear(embed_dim, hidden),
+            nn.Linear(1, hidden),
             nn.ReLU(), #Rectified Linear Unit (makes sure not everything is linear)
             nn.Linear(hidden, hidden),
             nn.ReLU(),
@@ -59,24 +56,20 @@ class NoiseMDN(nn.Module):
         self.mean_head = nn.Linear(hidden, K) #Where is the center of the Gaussian
         self.logstd_head = nn.Linear(hidden, K) #How uncertain each Gaussian is-High log standard deviation=flat distribution
 
-    def forward(self, symbol_indices): #MAKES THE NOISE PARAMETERS (WEIGHTS, MEANS, STDS)
-        h = self.net(self.symbol_embed(symbol_indices))
+    def forward(self, transmitted): #MAKES THE NOISE PARAMETERS (WEIGHTS, MEANS, STDS)
+        h = self.net(transmitted.unsqueeze(-1)) #(B,) -> (B, 1) so Linear sees one input feature
         weights = torch.softmax(self.weight_head(h), dim=-1) #softmax converts numbers into a probability distribution
-        #softmax is needed because to apply the weights, they have to follow the rules of a probability distribution
         means = self.mean_head(h)
         stds = torch.nn.functional.softplus(self.logstd_head(h)) + 1e-3  # keep std > 0, avoid collapse, softplus = better log
         return weights, means, stds
 
-    def sample(self, symbol_indices): #RETURNS THE SYMBOLS WITH THE NOISE [1, 2, 3, 4, 5]
+    def sample(self, transmitted): #RETURNS THE SYMBOLS WITH THE NOISE [1, 2, 3, 4, 5]
         with torch.no_grad():
-            weights, means, stds = self.forward(symbol_indices) # all three look like [[1, 3, 2, 4, 5]] (2D!!!)
+            weights, means, stds = self.forward(transmitted) # all three look like [[1, 3, 2, 4, 5]] (2D!!!)
             k = torch.multinomial(weights, num_samples=1).squeeze(-1) #randomly picks one element with the weights as probs
-            #weights is a tensor like [0.1, 0.7, 0.2], and picking one sample would have high likelyhood of returning idx 1
             # [1]
             chosen_mean = means.gather(1, k.unsqueeze(1)).squeeze(1) #gather looks along dim=1 (columns) and picks the kth item
-            # [[1, 3, 3, 2, 4]].gather(1, [[k]]) will return the kth item on the (only) column. Squeezing turns [[n]] to [n]
             chosen_std = stds.gather(1, k.unsqueeze(1)).squeeze(1)
-            #Unsqueezed and then squeezed to satisfy dimension requirements, see above^^
             return torch.normal(chosen_mean, chosen_std) #Picks random item in the normal distribution given the parameters
 
 class Decoder(nn.Module):
@@ -104,8 +97,6 @@ class Decoder(nn.Module):
             (received_values.unsqueeze(-1) - boundaries.unsqueeze(0)) * self.temperature
         )  
 
-        # Summing these gives a smooth, differentiable approximation of "how many boundaries has this value passed"
-        # but now as a continuous value instead of a hard integer
         soft_symbol_position = soft_indicators.sum(dim=-1)  
 
         return soft_symbol_position  # continuous prediction, differentiable

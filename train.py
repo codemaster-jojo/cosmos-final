@@ -11,8 +11,10 @@ device = torch.device(
 )
 
 class MainDataset(Dataset):
-    def __init__(self, features, labels):
-        self.features = torch.tensor(features, dtype=torch.long)
+    def __init__(self, features, labels, feature_dtype=torch.long):
+        #feature_dtype defaults to long because Constellation/Embedding lookups need integer indices,
+        #but the wire measurements are continuous amplitudes and must stay float
+        self.features = torch.tensor(features, dtype=feature_dtype)
         self.labels = torch.tensor(labels, dtype=torch.float32)
     def __len__(self):
         return len(self.features)

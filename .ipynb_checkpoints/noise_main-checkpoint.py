@@ -7,22 +7,24 @@ from train import MainDataset, radio_trainer, device
 from visualize import *
 import numpy as np
 from torch.utils.data import random_split, TensorDataset
+from gaussian_noise import plot_gaussian
 
 
-#noise_model = NoiseMDN().to(device)
+noise_model = NoiseMDN().to(device)
 
-noise_model = NoiseMDN()
-noise_model = noise_model.to(device)
-noise_model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
+# noise_model = NoiseMDN()
+# noise_model = noise_model.to(device)
+# noise_model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
 
 features = []
 labels = []
 
-with open("/Users/alyang/Downloads/cosmos-final/signals_through_wire.txt", "r") as f:
+with open("signals_through_wire.txt", "r") as f:
     for line in f:
         a, b = map(float, line.split())   # use int instead of float if appropriate
         features.append(a)
         labels.append(b)
+
 
 
 dataset = MainDataset(features, labels)
@@ -38,9 +40,13 @@ model = NoiseMDN(num_symbols=8, embed_dim=3, hidden=64, K=3).to(device)
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2)
 
+features = torch.tensor(features, dtype=torch.float32).to(device)
+
 train_hist, val_hist = radio_trainer(model, train_loader, val_loader, optimizer, scheduler)
 
 plot_loss(train_hist)
+
+plot_radio_model(model, features)
 
 
 #SAVING IS EMBEDDED IN TRAIN FUNCTION
