@@ -42,8 +42,3 @@ def plot_noise(file_path):
     plt.ylabel("Noise")
     plt.title("Noise through Wire Channel")
     plt.show()
-
-plot_noise("signals_through_wire.txt")
-
-    
-    
