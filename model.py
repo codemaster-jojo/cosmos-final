@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
+ 
 class Constellation(nn.Module):
     
     def __init__(self, M=8, Es=1.0):

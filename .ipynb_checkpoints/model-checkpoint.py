@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
+ 
 class Constellation(nn.Module):
     
     def __init__(self, M=8, Es=1.0):
@@ -68,11 +68,14 @@ class NoiseMDN(nn.Module):
         weights, means, stds = self.forward(transmitted)
         mixture_mean = (weights * means).sum(dim=-1) #Each Gaussian mean is multiplied by its importance to find center of the mix. Sums this for every single symbol, so if transmitted has 1000 symbols, size [1000]
         mixture_variance = (weights * (stds**2 + means**2)).sum(dim=-1) - mixture_mean**2
-        #Variance = E[X^2] - (E[X])^2. E[X] = mixture_mean
+        #Variance = E[X^2] - (E[X])^2. E[X] = mixture_mean. 
+        #For E[X^2], means -> means^2+std^2, so we put that in instead of means
+        #Variance comes from both the stds and the means (when you add up many Gaussians, they variance will increase depending on how far away their means are
     
         mixture_variance = torch.clamp(mixture_variance, min=1e-6) #Keep everything positive
         random_nums = torch.randn_like(mixture_mean) #Generates Gaussian Distribution Matrix the size of mixture_mean
-        received = mixture_mean + torch.sqrt(mixture_variance) * random_nums
+        received = mixture_mean + (torch.sqrt(mixture_variance) * random_nums)
+        #Std of the mixture is the sqrt(variance), measures ~how far away points are from the mean.
         return received
 
 
