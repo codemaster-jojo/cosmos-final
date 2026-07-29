@@ -8,6 +8,7 @@ from visualize import *
 import numpy as np
 from torch.utils.data import random_split, TensorDataset
 
+
 #noise_model = NoiseMDN().to(device)
 
 noise_model = NoiseMDN()
@@ -40,6 +41,8 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0
 train_hist, val_hist = radio_trainer(model, train_loader, val_loader, optimizer, scheduler)
 
 plot_loss(train_hist)
+
+
 #SAVING IS EMBEDDED IN TRAIN FUNCTION
 
 print("Training complete.")

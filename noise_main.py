@@ -7,6 +7,8 @@ from train import MainDataset, radio_trainer, device
 from visualize import *
 import numpy as np
 from torch.utils.data import random_split, TensorDataset
+from gaussian_noise import plot_gaussian
+
 
 #noise_model = NoiseMDN().to(device)
 
@@ -24,6 +26,7 @@ with open("/Users/alyang/Downloads/cosmos-final/signals_through_wire.txt", "r") 
         labels.append(b)
 
 
+
 dataset = MainDataset(features, labels)
 train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
 
@@ -39,7 +42,12 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0
 
 train_hist, val_hist = radio_trainer(model, train_loader, val_loader, optimizer, scheduler)
 
+weights, means, stds = model.forward(features)
+
 plot_loss(train_hist)
+plot_gaussian(weights, means, stds)
+
+
 #SAVING IS EMBEDDED IN TRAIN FUNCTION
 
 print("Training complete.")
