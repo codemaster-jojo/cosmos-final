@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
-from model import Constellation, Decoder
+from model import *
 from infrastructure import bits_to_symbol_indices, calculate_BER, pam_symbols_to_bits, pam_from_indices
 import numpy as np
 from data import *
@@ -11,15 +11,17 @@ device = torch.device(
 )
 
 class MainDataset(Dataset):
-    def __init__(self, features, labels):
-        self.features = torch.tensor(features, dtype=torch.long)
+    def __init__(self, features, labels, feature_dtype=torch.long):
+        #feature_dtype defaults to long because Constellation/Embedding lookups need integer indices,
+        #but the wire measurements are continuous amplitudes and must stay float
+        self.features = torch.tensor(features, dtype=feature_dtype)
         self.labels = torch.tensor(labels, dtype=torch.float32)
     def __len__(self):
         return len(self.features)
     def __getitem__(self, index):
         return self.features[index], self.labels[index]
 
-def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps=1000, report_every=100):
+def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_function, max_steps=1000, report_every=100):
     constellation.train()
     decoder.train()
     data_points = []
@@ -35,7 +37,8 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
         transmitted = constellation(symbol_indices)
         # gain_transmitted = torch.tensor(apply_gain(transmitted)).to(device)
         # noise = 0.1 * torch.randn_like(gain_transmitted)
-        noise = (0.5 + torch.abs(transmitted)**0.8) * 0.05 * torch.randn_like(transmitted)
+        #noise = (0.5 + torch.abs(transmitted)**0.8) * 0.05 * torch.randn_like(transmitted)
+        noise = noiseMDN.sample(transmitted)
         # received = gain_transmitted + noise
         received = transmitted + noise
         
@@ -82,7 +85,7 @@ def mdn_loss(weights, means, stds, target):
     weighted = torch.log(weights + 1e-8) + log_probs
     return -torch.logsumexp(weighted, dim=-1).mean()
 
-def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epochs = 5):
+def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epochs = 30):
     train_loss_history = []
     val_loss_history = []
     best_val_loss = float("inf")

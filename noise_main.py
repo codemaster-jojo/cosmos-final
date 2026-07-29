@@ -7,13 +7,12 @@ from train import MainDataset, radio_trainer, device
 from visualize import *
 import numpy as np
 from torch.utils.data import random_split, TensorDataset
-from gaussian_noise import plot_gaussian
 
 
 features = []
 labels = []
 
-with open("signals_through_wire.txt", "r") as f:
+with open("/Users/alyang/Downloads/cosmos-final/signals_through_wire.txt", "r") as f:
     for line in f:
         a, b = map(float, line.split())   # use int instead of float if appropriate
         features.append(a)
@@ -29,10 +28,14 @@ val_loader = DataLoader(val_set, batch_size=1024, shuffle=False)
 test_loader = DataLoader(test_set, batch_size=1024, shuffle=False)
 
 
+#For first run only
+#model = NoiseMDN(hidden=64, K=3).to(device)
 
-model = NoiseMDN(hidden=64, K=3).to(device)
 
-# DO THIS INSTEAD TO CARRY ON FROM A PREVIOUS RUN
+
+model = NoiseMDN()
+model = model.to(device)
+model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
 # model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
 
 optimizer = optim.Adam(model.parameters(), lr=0.001)

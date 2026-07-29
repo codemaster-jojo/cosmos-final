@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from model import Constellation, Decoder
+from model import *
 from infrastructure import bits_to_symbol_indices
 from train import MainDataset, trainer, device
 from visualize import *
@@ -17,6 +17,10 @@ device = torch.device(
 # DO THIS IF IT IS YOUR FIRST TIME RUNNING THIS PROGRAM
 constellation_model = Constellation().to(device)
 decoder_model = Decoder().to(device)
+
+noise_model = NoiseMDN()
+noise_model = noise_model.to(device)
+noise_model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
 
 '''
 decoder_model = Decoder()
@@ -35,7 +39,7 @@ optimizer = optim.Adam(
 )
 
 
-with open("list_of_bits.txt", "r") as file:
+with open("/Users/alyang/Downloads/cosmos-final/list_of_bits.txt", "r") as file:
     all_symbols = []
     for line in file:
         bits = [int(bit) for bit in line.strip()]
@@ -48,7 +52,7 @@ train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
 dataloader = DataLoader(train_set, batch_size=1024, shuffle=True)
 
 
-data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, optimizer, loss_function, max_steps=5000, report_every=1000)
+data_distrb, loss_over_time = trainer(dataloader, constellation_model, decoder_model, noise_model, optimizer, loss_function, max_steps=5000, report_every=1000)
 
 plot_constellation(constellation_model.normalized_points(), decoder_model.get_boundaries(), data_distrb)
 plot_loss(loss_over_time)
