@@ -34,8 +34,8 @@ def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function,
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=200)
 
     Es = float(constellation.Es)
-    N0 = Es / (10 ** (snr_db / 10.0))
-    sigma = (N0 / 2.0) ** 0.5
+    N0 = Es / (10 ** (snr_db / 10.0)) #Noise Variance How much noise power
+    sigma = (N0 / 2.0) ** 0.5 #Splits noise variance between complex and real, and then takes sqrt for std
     # AWGN log-likelihood temperature (replaces the PAM annealing schedule)
     decoder.temperature = 1.0 / N0
 

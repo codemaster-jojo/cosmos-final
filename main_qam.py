@@ -12,10 +12,7 @@ from torch.utils.data import random_split
 # device is CPU (imported from train_qam)
 
 # Random start so learning is observable; use init="qam64" for square baseline.
-constellation_model = Constellation(
-    points=make_qam64_points(init="qam64"),
-    M=64,
-).to(device)
+constellation_model = Constellation(points=make_qam64_points(init="qam64"), M=64,).to(device)
 
 decoder_model = QAMDecoder(constellation_model).to(device)
 

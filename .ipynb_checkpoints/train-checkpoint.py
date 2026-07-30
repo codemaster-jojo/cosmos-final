@@ -89,7 +89,7 @@ def mdn_loss(weights, means, stds, target):
     weighted = torch.log(weights + 1e-8) + log_probs
     return -torch.logsumexp(weighted, dim=-1).mean()
 
-def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epochs = 30):
+def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epochs = 20):
     train_loss_history = []
     val_loss_history = []
     best_val_loss = float("inf")
@@ -143,7 +143,6 @@ def radio_trainer(model, train_loader, val_loader, optimizer, scheduler, max_epo
         if val_loss < best_val_loss - 0.0001: #0.0001 checks for REAL improvement, not negligible decreases
             best_val_loss = val_loss
             epochs_since_improvement = 0
-            torch.save(model.state_dict(), "noise_mdn.pth")
         else:
             epochs_since_improvement += 1
             if epochs_since_improvement >= 5:
