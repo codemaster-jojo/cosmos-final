@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 #utility functions
+# NEEDS CLEANING -- UNNECESSARY DUPING
 
 #bits_and_pam
 def get_pam_constellation(M, Es=1):
@@ -59,6 +60,20 @@ def bits_to_pam_symbols(bits, constellation):
 
     return symbols
 
+# same method, just renamed
+def bits_to_qam_symbols(bits, constellation):
+    length = int(np.log2(len(constellation)))
+    num_symbols = len(bits) // length
+
+    symbols = np.zeros(num_symbols, dtype=constellation.dtype)
+
+    for i in range(num_symbols):
+        chunk = bits[i*length:(i+1)*length]
+        index = int(chunk, 2)
+        symbols[i] = constellation[index]
+
+    return symbols
+
 
 def pam_symbols_to_bits(symbols, constellation):
     bits = []
@@ -76,6 +91,22 @@ def pam_symbols_to_bits(symbols, constellation):
 
     return np.array(bits)
 
+# same function, just renamed
+def qam_symbols_to_bits(symbols, constellation):
+    bits = []
+
+    length = int(np.log2(len(constellation)))
+
+    for symbol in symbols:
+        index = np.argmin(np.abs(np.array(constellation) - symbol))
+
+        binary_bits = [
+            int(x) for x in format(index, f'0{length}b')
+        ]
+
+        bits.extend(binary_bits)
+
+    return np.array(bits)
     
 #files_and_bytes
 def file_to_bytes(file_path):
@@ -124,6 +155,17 @@ def pam_detect(symbols, c):
         detected_symbols[i] = constellation[first_true]
     return detected_symbols
 
+# nearest neighbor instead of decision boundaries
+def qam_detect(symbols, constellation):
+    # get nearest neighbor
+    detected_symbols = np.zeros_like(symbols, dtype=constellation.dtype)
+
+    for i, symbol in enumerate(symbols):
+        index = np.argmin(np.abs(constellation - symbol))
+        detected_symbols[i] = constellation[index]
+
+    return detected_symbols
+
 #bits_and_bytes
 def bytes_to_bits(byte_data):
     """
@@ -167,5 +209,9 @@ def pam_from_indices(constellation, indices):
         pam_symbols.append(constellation[indices[i]])
     return pam_symbols
 
-def apply_gain(symbols):
+# works for qam too
+def qam_from_indices(constellation, indices):
+    return constellation[indices]
+
+def apply_gain(symbols): # for pam only
     return symbols / (1 + 0.5*symbols**2)

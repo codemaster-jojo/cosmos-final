@@ -13,12 +13,12 @@ num_repeat = 1000
 num_symbols = 8 * num_repeat
 
 tx = PlutoTransmitter()
-sdr_tx = adi.Pluto("usb:1.1.5")
+sdr_tx = adi.Pluto("usb:0.1.5")
 tx.set_sdr(sdr_tx)
 tx.set_channel(9)
 tx.set_power_level(90)
 
-sdr_rx = adi.Pluto("usb:0.1.5")
+sdr_rx = adi.Pluto("usb:1.1.5")
 
 rx = PlutoReceiver()
 rx.set_sdr(sdr_rx)

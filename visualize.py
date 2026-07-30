@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from scipy.spatial import Voronoi, voronoi_plot_2d
+
+from digicomm import *
 
 def plot_constellation(constellation, boundaries, distribution):
     constellation = constellation.detach().cpu().numpy()
@@ -101,4 +104,17 @@ def plot_constellation_with_model(model, constellation, num_repeat=1000):
     plt.xlabel("Symbol Received")
     plt.ylabel("Count")
     plt.grid(True)
+    plt.show()
+
+def plot_qam_constellation(constellation, distribution):
+    # use the scipy voronoi thing to find closest neighbor boundaries
+    pts = np.column_stack([np.real(constellation), np.imag(constellation)])
+    vor = Voronoi(pts)
+    fig, ax = plt.subplots() # make sure evreythings on one graph
+
+    ax.hexbin(np.real(distribution), np.imag(distribution), gridsize=100, bins="log")
+    voronoi_plot_2d(vor, ax=ax, show_vertices=False, line_colors='k')
+    ax.scatter(pts[:,0], pts[:,1], c='r')
+    
+    plt.axis('equal')
     plt.show()

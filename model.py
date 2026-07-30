@@ -1,31 +1,44 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
- 
+
+default_8PAM = torch.tensor(
+    [-2.5, -2.3, -0.9, -0.1, 0.1, 0.9, 2.3, 2.5],
+    dtype=torch.float32,
+)
+
+default_16QAM = torch.tensor(
+    [
+        -3 - 3j, -3 - 1j, -3 + 1j, -3 + 3j,
+        -1 - 3j, -1 - 1j, -1 + 1j, -1 + 3j,
+         1 - 3j,  1 - 1j,  1 + 1j,  1 + 3j,
+         3 - 3j,  3 - 1j,  3 + 1j,  3 + 3j,
+    ],
+    dtype=torch.complex64,
+)
+
+
+def make_qam16_points(init="qam16"):
+    if init == "qam16":
+        return default_16QAM.clone()
+    if init == "random":
+        return torch.randn(16, dtype=torch.complex64) * 0.5
+    raise ValueError(f"Unknown QAM init: {init!r}")
+
+
 class Constellation(nn.Module):
-    
-    def __init__(self, M=8, Es=1.0):
+    # default to 8pam (real 1D). Pass complex64 1D for QAM.
+    def __init__(self, points=None, M=8, Es=1.0):
         super().__init__()
+        if points is None:
+            points = default_8PAM
         self.M = M
         self.Es = Es
+        # clone so callers / the module default never share one Parameter storage
+        self.points = nn.Parameter(points.clone().detach())
 
-        self.points = nn.Parameter(
-            torch.tensor([
-                -1.5275252316519465,
-                -1.0910894511799618,
-                -0.6546536707079771,
-                -0.21821789023599236,
-                 0.21821789023599236,
-                 0.6546536707079771,
-                 1.0910894511799618,
-                 1.5275252316519465
-            ], dtype=torch.float32)
-        )
-    
-        #self.points = nn.Parameter(torch.tensor([-2.5, -2.3, -0.9, -0.1, 0.1,  0.9,  2.3,  2.5], dtype=torch.float32))
-    
     def normalized_points(self):
-        energy = (self.points ** 2).mean()
+        energy = (torch.abs(self.points) ** 2).mean()  # abs works for real and complex
         scale = torch.sqrt(self.Es / energy)
         return self.points * scale
 
@@ -34,12 +47,10 @@ class Constellation(nn.Module):
         return pts[symbol_indices]
 
     def set_points(self, new_points):
-        #Allows external optimizer/LLM to modify constellation.
+        # Allows external optimizer/LLM to modify constellation.
         with torch.no_grad():
             self.points.copy_(
-                torch.tensor(
-                    new_points,
-                    dtype=torch.float32)
+                torch.as_tensor(new_points, dtype=self.points.dtype, device=self.points.device)
             )
 
 
@@ -118,3 +129,21 @@ class Decoder(nn.Module):
                 received_values
             )
         return predicted_symbols
+
+# basically only exists so u can calculate loss/backpropagate. it doesnt actually learn anything
+class QAMDecoder(nn.Module):
+    def __init__(self, constellation, temperature=10.0):
+        super().__init__()
+
+        self.constellation = constellation
+        self.temperature = temperature
+
+    def forward(self, received_values):
+        points = self.constellation.normalized_points()
+        distances = torch.abs(received_values.unsqueeze(-1) - points.unsqueeze(0)) ** 2
+        # Real logits; temperature = 1/N0 makes these AWGN log-likelihoods.
+        return -distances * self.temperature
+
+    def decode_hard(self, received_values):
+        with torch.no_grad():
+            return self.forward(received_values).argmax(dim=-1)
