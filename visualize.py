@@ -73,6 +73,36 @@ def plot_radio_model(model, x, num_inputs=2000, samples_each=200):
     plt.ylabel("Received")
     plt.show()
 
+def plot_qam_symbols(file_name):
+    symbols_in = []
+    noise = []
+    
+    with open(file_name, "r") as f:
+        for line in f:
+            a, b = line.split()
+            a = complex(a.strip("()"))
+            b = complex(b.strip("()"))
+            symbols_in.append(a)
+            noise.append(b - a)
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+    hb1 = ax[0].hexbin(np.real(symbols_in), np.real(noise), gridsize=100, cmap="viridis", bins="log")
+    fig.colorbar(hb1, ax=ax[0], label="log(count)")
+    ax[0].set_xlabel("Symbol In - Real")
+    ax[0].set_ylabel("Noise - Real")
+    ax[0].set_title("Real Channel Noise")
+
+    hb2 = ax[1].hexbin(np.imag(symbols_in), np.imag(noise), gridsize=100, cmap="viridis", bins="log")
+    fig.colorbar(hb2, ax=ax[1], label="log(count)")
+    ax[1].set_xlabel("Symbol In - Imaginary")
+    ax[1].set_ylabel("Noise - Imaginary")
+    ax[1].set_title("Imaginary Channel Noise")
+
+    plt.tight_layout()
+    plt.show()
+
+    
 def plot_constellation_with_model(model, constellation, num_repeat=1000):
     model.eval()
     device = next(model.parameters()).device
