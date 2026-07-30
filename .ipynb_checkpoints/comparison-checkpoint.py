@@ -23,7 +23,7 @@ rx.set_gain_level(70) # 60
 # rx.set_receive_gain(rx_gain_dB)
 rx.desired_transmit_symbols_real = True
 
-def calculate_ber(constellation, n=10):
+def calculate_ber(constellation, n=50):
     with open("list_of_bits.txt", "r") as f:
         packets = [line.strip() for line in f if line.strip()]
 
