@@ -7,22 +7,26 @@ default_8PAM = torch.tensor(
     dtype=torch.float32,
 )
 
-default_16QAM = torch.tensor(
+default_64QAM = torch.tensor(
     [
-        -3 - 3j, -3 - 1j, -3 + 1j, -3 + 3j,
-        -1 - 3j, -1 - 1j, -1 + 1j, -1 + 3j,
-         1 - 3j,  1 - 1j,  1 + 1j,  1 + 3j,
-         3 - 3j,  3 - 1j,  3 + 1j,  3 + 3j,
+        -7 - 7j, -7 - 5j, -7 - 3j, -7 - 1j, -7 + 1j, -7 + 3j, -7 + 5j, -7 + 7j,
+        -5 - 7j, -5 - 5j, -5 - 3j, -5 - 1j, -5 + 1j, -5 + 3j, -5 + 5j, -5 + 7j,
+        -3 - 7j, -3 - 5j, -3 - 3j, -3 - 1j, -3 + 1j, -3 + 3j, -3 + 5j, -3 + 7j,
+        -1 - 7j, -1 - 5j, -1 - 3j, -1 - 1j, -1 + 1j, -1 + 3j, -1 + 5j, -1 + 7j,
+         1 - 7j,  1 - 5j,  1 - 3j,  1 - 1j,  1 + 1j,  1 + 3j,  1 + 5j,  1 + 7j,
+         3 - 7j,  3 - 5j,  3 - 3j,  3 - 1j,  3 + 1j,  3 + 3j,  3 + 5j,  3 + 7j,
+         5 - 7j,  5 - 5j,  5 - 3j,  5 - 1j,  5 + 1j,  5 + 3j,  5 + 5j,  5 + 7j,
+         7 - 7j,  7 - 5j,  7 - 3j,  7 - 1j,  7 + 1j,  7 + 3j,  7 + 5j,  7 + 7j,
     ],
     dtype=torch.complex64,
 )
 
 
-def make_qam16_points(init="qam16"):
-    if init == "qam16":
-        return default_16QAM.clone()
+def make_qam64_points(init="qam64"):
+    if init == "qam64":
+        return default_64QAM.clone()
     if init == "random":
-        return torch.randn(16, dtype=torch.complex64) * 0.5
+        return torch.randn(64, dtype=torch.complex64) * 0.5
     raise ValueError(f"Unknown QAM init: {init!r}")
 
 

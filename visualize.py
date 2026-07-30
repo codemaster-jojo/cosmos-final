@@ -115,6 +115,9 @@ def plot_qam_constellation(constellation, distribution):
     ax.hexbin(np.real(distribution), np.imag(distribution), gridsize=100, bins="log")
     voronoi_plot_2d(vor, ax=ax, show_vertices=False, line_colors='k')
     ax.scatter(pts[:,0], pts[:,1], c='r')
-    
+
+    plt.xlabel("Real Component")
+    plt.xlabel("Imaginary Component")
+    plt.title("64QAM Constellation")
     plt.axis('equal')
     plt.show()

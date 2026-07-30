@@ -2,100 +2,85 @@ import torch
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
 from model import *
-from infrastructure import *
+from infrastructure import bits_to_symbol_indices, calculate_BER, qam_symbols_to_bits, qam_from_indices
 import numpy as np
 from data import *
 
-# QAM path stays on CPU: small model, complex intermediates are unreliable on MPS.
+# QAM stays on CPU: complex intermediates are unreliable on MPS.
 device = torch.device("cpu")
 
 
 class MainDataset(Dataset):
-    def __init__(self, symbol_indices):
-        self.symbol_indices = torch.tensor(symbol_indices, dtype=torch.long)
+    def __init__(self, features, labels, feature_dtype=torch.long):
+        # feature_dtype defaults to long because Constellation lookups need integer indices
+        self.features = torch.tensor(features, dtype=feature_dtype)
+        # long labels for CrossEntropyLoss over symbol indices
+        self.labels = torch.tensor(labels, dtype=torch.long)
 
     def __len__(self):
-        return len(self.symbol_indices)
+        return len(self.features)
 
     def __getitem__(self, index):
-        idx = self.symbol_indices[index]
-        return idx
+        return self.features[index], self.labels[index]
 
 
-def _index_ber(pred_idx, true_idx, bits_per_symbol):
-    """Bit error rate from symbol indices via XOR of their bit patterns."""
-    xor = torch.bitwise_xor(pred_idx, true_idx)
-    # count set bits in each XOR result
-    bit_errors = torch.zeros_like(xor, dtype=torch.float32)
-    x = xor
-    for _ in range(bits_per_symbol):
-        bit_errors += (x & 1).float()
-        x >>= 1
-    return (bit_errors.sum() / (len(xor) * bits_per_symbol)).item()
-
-
-def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps=1000, report_every=100, snr_db=20.0):
+def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function, max_steps=1000, report_every=100, snr_db=20.0):
     constellation.train()
+    decoder.train()
     data_points = []
     loss_over_time = []
     step = 0
-    recent_losses = []
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=200
-    )
+    recent_losses = []  # accumulates batch losses between reports
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=200)
 
     Es = float(constellation.Es)
-    # N0 = Es / (10 ** (snr_db / 10.0))
-    # sigma = (N0 / 2.0) ** 0.5
-    # AWGN log-likelihood temperature
-    # decoder.temperature = 1.0 / N0
-    bits_per_symbol = int(np.log2(constellation.M))
+    N0 = Es / (10 ** (snr_db / 10.0))
+    sigma = (N0 / 2.0) ** 0.5
+    # AWGN log-likelihood temperature (replaces the PAM annealing schedule)
+    decoder.temperature = 1.0 / N0
 
-    while step < max_steps:
-        for symbol_indices in dataloader:
-            if step >= max_steps:
-                break
+    for symbol_indices, labels in dataloader:
+        symbol_indices = symbol_indices.to(device)
+        labels = labels.to(device)
 
-            symbol_indices = symbol_indices.to(device)
-            transmitted = constellation(symbol_indices)
-            noise = 0.1 * (
-                torch.randn_like(transmitted.real)
-                + 1j * torch.randn_like(transmitted.real)
-            )
-            
-            received = transmitted + noise.to(transmitted.dtype)
+        transmitted = constellation(symbol_indices)
+        # complex AWGN in place of NoiseMDN (which is real/PAM-only)
+        # noise = sigma * (
+        #     torch.randn_like(transmitted.real) + 1j * torch.randn_like(transmitted.real)
+        # )
+        transmitted_real, transmitted_imag = np.real(transmitted), np.imag(transmitted)
+        received_real, received_imag = noise.sample(transmitted_real), noise.sample(transmitted_imag)
+        received = received_real + 1j * received_imag
 
-            logits = decoder(received)
-            loss = loss_function(logits, symbol_indices)
-            recent_losses.append(loss.item())
+        data_points += received.detach().cpu().tolist()
+        prediction = decoder(received)
+        loss = loss_function(prediction, labels)
+        recent_losses.append(loss.item())  # track every step's loss for averaging
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        step += 1
 
-            step += 1
+        if step % report_every == 0:
+            avg_loss = sum(recent_losses) / len(recent_losses)
+            scheduler.step(avg_loss)  # let the scheduler react to the averaged, less noisy loss
+            loss_over_time.append(avg_loss)
+            recent_losses = []  # reset the window for the next report interval
 
-            # only keep samples from the final report window for plotting
-            if step > max_steps - report_every:
-                data_points += received.detach().cpu().tolist()
+            constellation_np = constellation.normalized_points().detach().cpu().numpy()
+            qam_symbols = qam_from_indices(constellation_np, symbol_indices.cpu().numpy())
+            raw_bits = qam_symbols_to_bits(qam_symbols, constellation_np)
+            received_indices = decoder.decode_hard(received)
+            received_np = received_indices.detach().cpu().numpy()
+            qam_symbols = qam_from_indices(constellation_np, received_np)
+            raw_received_bits = qam_symbols_to_bits(qam_symbols, constellation_np)
+            print(f"Step {step} | Avg Loss: {avg_loss:.5f} | BER: {calculate_BER(raw_received_bits, raw_bits):.5f} | LR: {optimizer.param_groups[0]['lr']:.6f}")
 
-            if step % report_every == 0:
-                avg_loss = sum(recent_losses) / len(recent_losses)
-                scheduler.step(avg_loss)
-                loss_over_time.append(avg_loss)
-                recent_losses = []
+        if step == max_steps - 1:
+            print(constellation.normalized_points().detach())
+        if step > max_steps:
+            return data_points, np.array(loss_over_time)
 
-                pred_idx = decoder.decode_hard(received)
-                ser = (pred_idx != symbol_indices).float().mean().item()
-                ber = _index_ber(pred_idx, symbol_indices, bits_per_symbol)
-                print(
-                    f"Step {step} | Avg Loss: {avg_loss:.5f} | "
-                    f"SER: {ser:.5f} | BER: {ber:.5f} | "
-                    f"LR: {optimizer.param_groups[0]['lr']:.6f}"
-                )
-
-            if step >= max_steps:
-                print(constellation.normalized_points().detach())
-                break
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
     return data_points, np.array(loss_over_time)

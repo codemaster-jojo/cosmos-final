@@ -24,7 +24,7 @@ class MainDataset(Dataset):
         return self.features[index], self.labels[index]
 
 
-def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_steps=1000, report_every=100, snr_db=20.0):
+def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function, max_steps=1000, report_every=100, snr_db=20.0):
     constellation.train()
     decoder.train()
     data_points = []
@@ -45,10 +45,12 @@ def trainer(dataloader, constellation, decoder, optimizer, loss_function, max_st
 
         transmitted = constellation(symbol_indices)
         # complex AWGN in place of NoiseMDN (which is real/PAM-only)
-        noise = sigma * (
-            torch.randn_like(transmitted.real) + 1j * torch.randn_like(transmitted.real)
-        )
-        received = transmitted + noise.to(transmitted.dtype)
+        # noise = sigma * (
+        #     torch.randn_like(transmitted.real) + 1j * torch.randn_like(transmitted.real)
+        # )
+        transmitted_real, transmitted_imag = np.real(transmitted), np.imag(transmitted)
+        received_real, received_imag = noise.sample(transmitted_real), noise.sample(transmitted_imag)
+        received = received_real + 1j * received_imag
 
         data_points += received.detach().cpu().tolist()
         prediction = decoder(received)
