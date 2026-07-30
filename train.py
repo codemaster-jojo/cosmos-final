@@ -57,6 +57,7 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
             loss_over_time.append(avg_loss)
             recent_losses = []  # reset the window for the next report interval
 
+            #CALCULATES BER
             constellation_np = constellation.normalized_points().detach().cpu().numpy()
             pam_symbols = pam_from_indices(constellation_np, symbol_indices)
             raw_bits = pam_symbols_to_bits(pam_symbols, constellation_np)
@@ -65,10 +66,12 @@ def trainer(dataloader, constellation, decoder, noiseMDN, optimizer, loss_functi
             pam_symbols = pam_from_indices(constellation_np, received_np)
             raw_received_bits = pam_symbols_to_bits(pam_symbols, constellation_np)
             print(f"Step {step} | Avg Loss: {avg_loss:.5f} | BER: {calculate_BER(raw_received_bits, raw_bits):.5f} | LR: {optimizer.param_groups[0]['lr']:.6f}")
+            #END OF LONGWINDED CALCULATION
 
-        if step == max_steps - 1:
+            
             print(constellation.normalized_points())
             print(decoder.get_boundaries())
+        
         if step > max_steps:
             return data_points, np.array(loss_over_time)
 

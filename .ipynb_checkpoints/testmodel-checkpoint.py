@@ -1,6 +1,7 @@
 import torch
 
 from model import Constellation, Decoder
+from digicomm import get_qam_constellation
 
 
 def main():
@@ -54,6 +55,7 @@ def main():
     num_correct = (decoded_noisy == symbol_indices).sum().item()
 
     print(f"\nCorrect: {num_correct}/8")
+
 
 
 if __name__ == "__main__":

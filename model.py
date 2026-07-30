@@ -8,7 +8,7 @@ class Constellation(nn.Module):
         super().__init__()
         self.M = M
         self.Es = Es
-        '''
+
         self.points = nn.Parameter(
             torch.tensor([
                 -1.5275252316519465,
@@ -21,13 +21,13 @@ class Constellation(nn.Module):
                  1.5275252316519465
             ], dtype=torch.float32)
         )
-        '''      
-        self.points = nn.Parameter(torch.tensor([-2.5, -2.3, -0.9, -0.1, 0.1,  0.9,  2.3,  2.5], dtype=torch.float32))
+    
+        #self.points = nn.Parameter(torch.tensor([-2.5, -2.3, -0.9, -0.1, 0.1,  0.9,  2.3,  2.5], dtype=torch.float32))
+    
     def normalized_points(self):
         energy = (self.points ** 2).mean()
         scale = torch.sqrt(self.Es / energy)
         return self.points * scale
-
 
     def forward(self, symbol_indices):
         pts = self.normalized_points()
@@ -85,13 +85,19 @@ class Decoder(nn.Module):
 
         self.constellation = constellation
         self.temperature = temperature
-        
+        init_boundaries = torch.tensor([-1.3093, -0.8729, -0.4364, 0.0, 0.4364, 0.8729, 1.3093], dtype=torch.float32)
+        self.raw_boundaries = nn.Parameter(init_boundaries)
+    
+    # NEAREST NEIGHBOR FUNCTION   
+    # def get_boundaries(self):
+    #     points = self.constellation.normalized_points()
+    #     boundaries = (points[:-1] + points[1:]) / 2
+    #     return boundaries
+
+    #LEARNABLE FUNCTION
     def get_boundaries(self):
-        points = self.constellation.normalized_points()
-        boundaries = (
-            points[:-1] + points[1:]
-        ) / 2
-        return boundaries
+        # Sort to guarantee increasing order, regardless of how gradients move them individually
+        return torch.sort(self.raw_boundaries).values
         
     def forward(self, received_values):
         boundaries = self.get_boundaries()
