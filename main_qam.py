@@ -12,22 +12,20 @@ from torch.utils.data import random_split
 # device is CPU (imported from train_qam)
 
 # Random start so learning is observable; use init="qam64" for square baseline.
-constellation_model = Constellation(points=make_qam64_points(init="qam64"), M=64,).to(device)
 
-decoder_model = QAMDecoder(constellation_model).to(device)
+
 
 '''
 decoder_model = QAMDecoder(constellation_model)
 decoder_model = decoder_model.to(device)
 decoder_model.load_state_dict(torch.load("decoder_qam.pth", weights_only=True))
-
-constellation_model = Constellation(points=make_qam64_points(init="qam64"), M=64)
-constellation_model = constellation_model.to(device)
 '''
+constellation_model = Constellation(points=make_qam64_points(init="qam64"), M=64).to(device)
+constellation_model.load_state_dict(torch.load("constellation_qam.pth", weights_only = True))
 
-constellation_model.load_state_dict(torch.load("constellation_qam.pth", weights_only=True))
+decoder_model = QAMDecoder(constellation_model).to(device)
 
-
+#LOSS/OPTIMIZER FUNCTIONS
 loss_function = nn.CrossEntropyLoss()
 # Only constellation params — QAMDecoder registers constellation as a submodule,
 # so adding decoder.parameters() would put the same weights in Adam twice.
@@ -36,7 +34,7 @@ optimizer = optim.Adam(
     lr=0.001,
 )
 
-
+#SYMBOLS FROM LIST_OF_BITS
 with open("list_of_bits.txt", "r") as file:
     all_symbols = []
     for line in file:
@@ -49,13 +47,34 @@ dataset = MainDataset(all_symbols, all_symbols)
 train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1])
 dataloader = DataLoader(train_set, batch_size=1024, shuffle=True)
 
-noise_model = NoiseMDN()
-noise_model = noise_model.to(device)
-noise_model.load_state_dict(torch.load("noise_mdn.pth", weights_only = True))
+
+#LOADS MODELS
+real_noise_model = NoiseMDN()
+real_noise_model = real_noise_model.to(device)
+real_noise_model.load_state_dict(torch.load("real_noise_mdn.pth", weights_only = True))
+
+imag_noise_model = NoiseMDN()
+imag_noise_model = imag_noise_model.to(device)
+imag_noise_model.load_state_dict(torch.load("imag_noise_mdn.pth", weights_only = True))
+
+real_noise_model.eval()
+imag_noise_model.eval()
+for p in real_noise_model.parameters(): p.requires_grad_(False)
+for p in imag_noise_model.parameters(): p.requires_grad_(False)
 
 
-data_distrb, loss_over_time = trainer(dataloader,constellation_model,decoder_model,noise_model,
-                                      optimizer,loss_function,max_steps=10000,report_every=1000,snr_db=20.0)
+
+    
+#Runs Trainer
+val_loader = DataLoader(val_set, batch_size=1024, shuffle=False)
+test_loader = DataLoader(test_set, batch_size=1024, shuffle=False)
+
+data_distrb, loss_over_time = trainer(
+    dataloader, constellation_model, decoder_model,
+    real_noise_model, imag_noise_model, optimizer, loss_function,
+    val_loader=val_loader,
+    max_steps=13000, report_every=1000, snr_db=20.0
+)
 
 plot_qam_constellation(
     constellation_model.normalized_points().detach().cpu().numpy(),

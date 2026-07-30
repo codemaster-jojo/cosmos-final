@@ -5,6 +5,7 @@ from model import *
 from infrastructure import bits_to_symbol_indices, calculate_BER, qam_symbols_to_bits, qam_from_indices
 import numpy as np
 from data import *
+from collections import Counter
 
 # QAM stays on CPU: complex intermediates are unreliable on MPS.
 device = torch.device("cpu")
@@ -24,21 +25,24 @@ class MainDataset(Dataset):
         return self.features[index], self.labels[index]
 
 
-def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function, max_steps=1000, report_every=100, snr_db=20.0):
+def trainer(dataloader, constellation, decoder, real_noise_model, imag_noise_model, optimizer, loss_function, val_loader = None, max_steps=1000, report_every=100, snr_db=20.0):    
     constellation.train()
     decoder.train()
     data_points = []
     loss_over_time = []
     step = 0
     recent_losses = []  # accumulates batch losses between reports
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=200)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
     Es = float(constellation.Es)
-    N0 = Es / (10 ** (snr_db / 10.0)) #Noise Variance How much noise power
+    N0 = Es / (10 ** (snr_db / 10.0)) #Noise Variance, how much noise power
     sigma = (N0 / 2.0) ** 0.5 #Splits noise variance between complex and real, and then takes sqrt for std
     # AWGN log-likelihood temperature (replaces the PAM annealing schedule)
     decoder.temperature = 1.0 / N0
 
+    best_val_ber = float('inf')
+    best_state = None
+    
     for symbol_indices, labels in dataloader:
         symbol_indices = symbol_indices.to(device)
         labels = labels.to(device)
@@ -49,7 +53,7 @@ def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function,
         #     torch.randn_like(transmitted.real) + 1j * torch.randn_like(transmitted.real)
         # )
         transmitted_real, transmitted_imag = np.real(transmitted), np.imag(transmitted)
-        received_real, received_imag = noise.sample(transmitted_real), noise.sample(transmitted_imag)
+        received_real, received_imag = real_noise_model.sample(transmitted_real), imag_noise_model.sample(transmitted_imag)
         received = received_real + 1j * received_imag
 
         data_points += received.detach().cpu().tolist()
@@ -73,6 +77,43 @@ def trainer(dataloader, constellation, decoder, noise, optimizer, loss_function,
             qam_symbols = qam_from_indices(constellation_np, received_np)
             raw_received_bits = qam_symbols_to_bits(qam_symbols, constellation_np)
             print(f"Step {step} | Avg Loss: {avg_loss:.5f} | BER: {calculate_BER(raw_received_bits, raw_bits):.5f} | LR: {optimizer.param_groups[0]['lr']:.6f}")
+
+            if val_loader is not None:
+                constellation.eval()
+                decoder.eval()
+                val_errors, val_bits_total = 0, 0
+                with torch.no_grad():
+                    for val_symbols, val_labels in val_loader:
+                        val_symbols = val_symbols.to(device)
+                        val_transmitted = constellation(val_symbols)
+                        vt_real, vt_imag = np.real(val_transmitted), np.imag(val_transmitted)
+                        vr_real = real_noise_model.sample(vt_real)
+                        vr_imag = imag_noise_model.sample(vt_imag)
+                        val_received = vr_real + 1j * vr_imag
+                        val_decoded = decoder.decode_hard(val_received)
+
+                        val_const_np = constellation.normalized_points().detach().cpu().numpy()
+                        true_syms = qam_from_indices(val_const_np, val_symbols.cpu().numpy())
+                        true_bits = qam_symbols_to_bits(true_syms, val_const_np)
+                        pred_syms = qam_from_indices(val_const_np, val_decoded.cpu().numpy())
+                        pred_bits = qam_symbols_to_bits(pred_syms, val_const_np)
+
+                        val_ber_batch = calculate_BER(pred_bits, true_bits)
+                        val_errors += val_ber_batch * len(true_bits)
+                        val_bits_total += len(true_bits)
+                val_ber = val_errors / val_bits_total
+                print(f"               Val BER: {val_ber:.5f}")
+
+                if val_ber < best_val_ber:
+                    best_val_ber = val_ber
+                    best_state = {
+                        'constellation': constellation.state_dict(),
+                        'decoder': decoder.state_dict(),
+                    }
+                    print(f"           ^ new best val BER, checkpoint saved")
+
+                constellation.train()
+                decoder.train()
 
         if step == max_steps - 1:
             print(constellation.normalized_points().detach())
