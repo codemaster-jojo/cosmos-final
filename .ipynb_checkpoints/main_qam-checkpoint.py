@@ -1,7 +1,7 @@
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from model import Constellation, QAMDecoder, make_qam64_points, NoiseMDN
+from model import Constellation, QAMDecoder, make_qam_points, NoiseMDN
 from infrastructure import bits_to_symbol_indices
 from train_qam import MainDataset, trainer, device
 from visualize import plot_qam_constellation, plot_loss
@@ -20,7 +20,7 @@ decoder_model = QAMDecoder(constellation_model)
 decoder_model = decoder_model.to(device)
 decoder_model.load_state_dict(torch.load("decoder_qam.pth", weights_only=True))
 '''
-constellation_model = Constellation(points=make_qam64_points(init="qam64"), M=64).to(device)
+constellation_model = Constellation(points=make_qam_points(init="qam256"), M=256).to(device)
 constellation_model.load_state_dict(torch.load("constellation_qam.pth", weights_only = True))
 
 decoder_model = QAMDecoder(constellation_model).to(device)
@@ -39,7 +39,7 @@ with open("list_of_bits.txt", "r") as file:
     all_symbols = []
     for line in file:
         bits = [int(bit) for bit in line.strip()]
-        symbol_indices = bits_to_symbol_indices(bits, 64)
+        symbol_indices = bits_to_symbol_indices(bits, 256)
         all_symbols.extend(symbol_indices)
 all_symbols = np.array(all_symbols, dtype=np.uint8)
 
@@ -73,7 +73,7 @@ data_distrb, loss_over_time = trainer(
     dataloader, constellation_model, decoder_model,
     real_noise_model, imag_noise_model, optimizer, loss_function,
     val_loader=val_loader,
-    max_steps=13000, report_every=1000, snr_db=20.0
+    max_steps=5000, report_every=1000, snr_db=20.0
 )
 
 plot_qam_constellation(

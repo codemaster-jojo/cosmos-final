@@ -69,7 +69,14 @@ def bits_to_qam_symbols(bits, constellation):
 
     for i in range(num_symbols):
         chunk = bits[i*length:(i+1)*length]
-        index = int(chunk, 2)
+
+        if isinstance(chunk, str):
+            index = int(chunk, 2)
+        else:
+            index = 0
+            for bit in chunk:
+                index = (index << 1) | int(bit)
+
         symbols[i] = constellation[index]
 
     return symbols

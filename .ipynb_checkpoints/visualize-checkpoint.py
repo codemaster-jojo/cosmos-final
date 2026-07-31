@@ -147,7 +147,36 @@ def plot_qam_constellation(constellation, distribution):
     ax.scatter(pts[:,0], pts[:,1], c='r')
 
     plt.xlabel("Real Component")
-    plt.xlabel("Imaginary Component")
-    plt.title("64QAM Constellation")
+    plt.ylabel("Imaginary Component")
+    plt.title("QAM Constellation")
     plt.axis('equal')
     plt.show()
+
+def plot_256qam_standard():
+    scale = 1 / np.sqrt(170)
+
+    
+    normalized_256QAM = np.array(
+        [
+            x + 1j*y
+            for x in range(-15, 16, 2)
+            for y in range(-15, 16, 2)
+        ],
+        dtype=np.complex64
+    ) * scale
+
+    samples_per_symbol = 1000
+    snr_db = 25
+
+    Es = 1  # normalized constellation energy
+    noise_power = Es / (10**(snr_db / 10))
+    noise_std = np.sqrt(noise_power / 2)
+
+    symbols = np.repeat(normalized_256QAM, samples_per_symbol)
+    noise = noise_std * (
+        np.random.randn(len(symbols)) + 1j*np.random.randn(len(symbols))
+    )
+
+    distribution = symbols + noise
+
+    plot_qam_constellation(normalized_256QAM, distribution)
