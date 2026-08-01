@@ -22,7 +22,7 @@ rx.set_channel(9)
 rx.set_gain_level(70) # 60
 rx.desired_transmit_symbols_real = False
 
-def calculate_ber(constellation, n=100):
+def calculate_ber(constellation, n=500):
     with open("list_of_bits.txt", "r") as f:
         packets = [line.strip() for line in f if line.strip()]
 
@@ -59,26 +59,63 @@ def calculate_ber(constellation, n=100):
 
     return float(np.mean(bers))
 
-standard = calculate_ber([
-        -15-15j, -15-13j, -15-11j, -15-9j, -15-7j, -15-5j, -15-3j, -15-1j, -15+1j, -15+3j, -15+5j, -15+7j, -15+9j, -15+11j, -15+13j, -15+15j,
-        -13-15j, -13-13j, -13-11j, -13-9j, -13-7j, -13-5j, -13-3j, -13-1j, -13+1j, -13+3j, -13+5j, -13+7j, -13+9j, -13+11j, -13+13j, -13+15j,
-        -11-15j, -11-13j, -11-11j, -11-9j, -11-7j, -11-5j, -11-3j, -11-1j, -11+1j, -11+3j, -11+5j, -11+7j, -11+9j, -11+11j, -11+13j, -11+15j,
-         -9-15j,  -9-13j,  -9-11j,  -9-9j,  -9-7j,  -9-5j,  -9-3j,  -9-1j,  -9+1j,  -9+3j,  -9+5j,  -9+7j,  -9+9j,  -9+11j,  -9+13j,  -9+15j,
-         -7-15j,  -7-13j,  -7-11j,  -7-9j,  -7-7j,  -7-5j,  -7-3j,  -7-1j,  -7+1j,  -7+3j,  -7+5j,  -7+7j,  -7+9j,  -7+11j,  -7+13j,  -7+15j,
-         -5-15j,  -5-13j,  -5-11j,  -5-9j,  -5-7j,  -5-5j,  -5-3j,  -5-1j,  -5+1j,  -5+3j,  -5+5j,  -5+7j,  -5+9j,  -5+11j,  -5+13j,  -5+15j,
-         -3-15j,  -3-13j,  -3-11j,  -3-9j,  -3-7j,  -3-5j,  -3-3j,  -3-1j,  -3+1j,  -3+3j,  -3+5j,  -3+7j,  -3+9j,  -3+11j,  -3+13j,  -3+15j,
-         -1-15j,  -1-13j,  -1-11j,  -1-9j,  -1-7j,  -1-5j,  -1-3j,  -1-1j,  -1+1j,  -1+3j,  -1+5j,  -1+7j,  -1+9j,  -1+11j,  -1+13j,  -1+15j,
-          1-15j,   1-13j,   1-11j,   1-9j,   1-7j,   1-5j,   1-3j,   1-1j,   1+1j,   1+3j,   1+5j,   1+7j,   1+9j,   1+11j,   1+13j,   1+15j,
-          3-15j,   3-13j,   3-11j,   3-9j,   3-7j,   3-5j,   3-3j,   3-1j,   3+1j,   3+3j,   3+5j,   3+7j,   3+9j,   3+11j,   3+13j,   3+15j,
-          5-15j,   5-13j,   5-11j,   5-9j,   5-7j,   5-5j,   5-3j,   5-1j,   5+1j,   5+3j,   5+5j,   5+7j,   5+9j,   5+11j,   5+13j,   5+15j,
-          7-15j,   7-13j,   7-11j,   7-9j,   7-7j,   7-5j,   7-3j,   7-1j,   7+1j,   7+3j,   7+5j,   7+7j,   7+9j,   7+11j,   7+13j,   7+15j,
-          9-15j,   9-13j,   9-11j,   9-9j,   9-7j,   9-5j,   9-3j,   9-1j,   9+1j,   9+3j,   9+5j,   9+7j,   9+9j,   9+11j,   9+13j,   9+15j,
-         11-15j,  11-13j,  11-11j,  11-9j,  11-7j,  11-5j,  11-3j,  11-1j,  11+1j,  11+3j,  11+5j,  11+7j,  11+9j,  11+11j,  11+13j,  11+15j,
-         13-15j,  13-13j,  13-11j,  13-9j,  13-7j,  13-5j,  13-3j,  13-1j,  13+1j,  13+3j,  13+5j,  13+7j,  13+9j,  13+11j,  13+13j,  13+15j,
-         15-15j,  15-13j,  15-11j,  15-9j,  15-7j,  15-5j,  15-3j,  15-1j,  15+1j,  15+3j,  15+5j,  15+7j,  15+9j,  15+11j,  15+13j,  15+15j,
-    ])
+def calculate_ser_distribution(constellation, n=100):
+    with open("list_of_bits.txt", "r") as f:
+        packets = [line.strip() for line in f if line.strip()]
 
-model = calculate_ber([-1.2616-1.2049j, -1.3178-0.8722j, -1.2179-0.5997j, -1.5857-0.6221j,
+    selected = np.random.choice(packets, size=min(n, len(packets)), replace=False)
+    constellation = np.asarray(constellation, dtype=complex)
+    error_locs = []
+
+    for bits in selected:
+        symbols = infrastructure.bits_to_qam_symbols(bits, constellation)
+        rx.num_transmit_symbols = len(symbols)
+
+        try:
+            tx.sdr.tx_destroy_buffer()
+        except Exception:
+            pass
+
+        try:
+            tx.transmit(symbols)
+            rx_symbols = rx.receive()
+        except:
+            print("Skipped: operands could not be broadcast together with shapes (0,) (100,)")
+            pass # to avoid "operands could not be broadcast together with shapes (0,) (100,)"
+        
+        detected = infrastructure.qam_detect(rx_symbols, constellation)
+        symbol_errors = np.where(symbols != detected)
+        for symbol in symbols[symbol_errors]:
+        #for symbol in detected[symbol_errors]:
+            error_locs.append(symbol)
+
+    error_locs = np.array(error_locs)
+    hb = plt.hexbin(np.real(error_locs), np.imag(error_locs), gridsize=100, bins="log")
+    plt.colorbar(hb, label="log10(count)")
+    plt.show()
+
+    return
+
+# standard = calculate_ser_distribution([
+#         -15-15j, -15-13j, -15-11j, -15-9j, -15-7j, -15-5j, -15-3j, -15-1j, -15+1j, -15+3j, -15+5j, -15+7j, -15+9j, -15+11j, -15+13j, -15+15j,
+#         -13-15j, -13-13j, -13-11j, -13-9j, -13-7j, -13-5j, -13-3j, -13-1j, -13+1j, -13+3j, -13+5j, -13+7j, -13+9j, -13+11j, -13+13j, -13+15j,
+#         -11-15j, -11-13j, -11-11j, -11-9j, -11-7j, -11-5j, -11-3j, -11-1j, -11+1j, -11+3j, -11+5j, -11+7j, -11+9j, -11+11j, -11+13j, -11+15j,
+#          -9-15j,  -9-13j,  -9-11j,  -9-9j,  -9-7j,  -9-5j,  -9-3j,  -9-1j,  -9+1j,  -9+3j,  -9+5j,  -9+7j,  -9+9j,  -9+11j,  -9+13j,  -9+15j,
+#          -7-15j,  -7-13j,  -7-11j,  -7-9j,  -7-7j,  -7-5j,  -7-3j,  -7-1j,  -7+1j,  -7+3j,  -7+5j,  -7+7j,  -7+9j,  -7+11j,  -7+13j,  -7+15j,
+#          -5-15j,  -5-13j,  -5-11j,  -5-9j,  -5-7j,  -5-5j,  -5-3j,  -5-1j,  -5+1j,  -5+3j,  -5+5j,  -5+7j,  -5+9j,  -5+11j,  -5+13j,  -5+15j,
+#          -3-15j,  -3-13j,  -3-11j,  -3-9j,  -3-7j,  -3-5j,  -3-3j,  -3-1j,  -3+1j,  -3+3j,  -3+5j,  -3+7j,  -3+9j,  -3+11j,  -3+13j,  -3+15j,
+#          -1-15j,  -1-13j,  -1-11j,  -1-9j,  -1-7j,  -1-5j,  -1-3j,  -1-1j,  -1+1j,  -1+3j,  -1+5j,  -1+7j,  -1+9j,  -1+11j,  -1+13j,  -1+15j,
+#           1-15j,   1-13j,   1-11j,   1-9j,   1-7j,   1-5j,   1-3j,   1-1j,   1+1j,   1+3j,   1+5j,   1+7j,   1+9j,   1+11j,   1+13j,   1+15j,
+#           3-15j,   3-13j,   3-11j,   3-9j,   3-7j,   3-5j,   3-3j,   3-1j,   3+1j,   3+3j,   3+5j,   3+7j,   3+9j,   3+11j,   3+13j,   3+15j,
+#           5-15j,   5-13j,   5-11j,   5-9j,   5-7j,   5-5j,   5-3j,   5-1j,   5+1j,   5+3j,   5+5j,   5+7j,   5+9j,   5+11j,   5+13j,   5+15j,
+#           7-15j,   7-13j,   7-11j,   7-9j,   7-7j,   7-5j,   7-3j,   7-1j,   7+1j,   7+3j,   7+5j,   7+7j,   7+9j,   7+11j,   7+13j,   7+15j,
+#           9-15j,   9-13j,   9-11j,   9-9j,   9-7j,   9-5j,   9-3j,   9-1j,   9+1j,   9+3j,   9+5j,   9+7j,   9+9j,   9+11j,   9+13j,   9+15j,
+#          11-15j,  11-13j,  11-11j,  11-9j,  11-7j,  11-5j,  11-3j,  11-1j,  11+1j,  11+3j,  11+5j,  11+7j,  11+9j,  11+11j,  11+13j,  11+15j,
+#          13-15j,  13-13j,  13-11j,  13-9j,  13-7j,  13-5j,  13-3j,  13-1j,  13+1j,  13+3j,  13+5j,  13+7j,  13+9j,  13+11j,  13+13j,  13+15j,
+#          15-15j,  15-13j,  15-11j,  15-9j,  15-7j,  15-5j,  15-3j,  15-1j,  15+1j,  15+3j,  15+5j,  15+7j,  15+9j,  15+11j,  15+13j,  15+15j,
+#     ])
+
+model = calculate_ser_distribution([-1.2616-1.2049j, -1.3178-0.8722j, -1.2179-0.5997j, -1.5857-0.6221j,
         -1.2403-0.3891j, -1.5868-0.3446j, -1.2571-0.1787j, -1.5976-0.0987j,
         -1.2624+0.0350j, -1.5982+0.1442j, -1.2529+0.2558j, -1.5733+0.3914j,
         -1.2223+0.4842j, -1.5207+0.6663j, -1.3249+0.9236j, -1.2244+1.2503j,
@@ -143,5 +180,5 @@ model = calculate_ber([-1.2616-1.2049j, -1.3178-0.8722j, -1.2179-0.5997j, -1.585
          1.2554+0.0658j,  1.5925+0.1314j,  1.2367+0.2729j,  1.5770+0.3933j,
          1.2225+0.4843j,  1.5159+0.6853j,  1.2690+0.9158j,  1.2541+1.2685j])
 
-print("Standard constellation BER:", standard)
-print("NN Model constellation BER:   ", model)
+# print("Standard constellation BER:", standard)
+# print("NN Model constellation BER:", model)
